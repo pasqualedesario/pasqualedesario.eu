@@ -3,7 +3,6 @@
     --color-black: #000;
     --color-gray: #bebfc3;
     --color-footer: #f2ff26;
-    --color-accent: #ff5200;
     --font-size-sm: clamp(0.68rem, 0.68rem + 0.07vw, 0.74rem);
     --font-size-md: clamp(1rem, 1rem + 0.07vw, 1.05rem);
     --font-size-body: clamp(0.84rem, 0.84rem + 0.17vw, 1.05rem);
@@ -16,7 +15,6 @@
     --footer-height: calc(3 * var(--font-size-sm));
     --space-sm: 0.625rem;
     --space-carousel: 2.5vw;
-    --carousel-easing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -124,11 +122,9 @@ a {
 }
 
 /* Language switcher */
-
 .lang-switcher {
     display: inline;
     font-feature-settings: "lnum" 1, "tnum" 1, "case" 1;
-    vertical-align: middle;
 }
 
 .lang-link {
@@ -138,7 +134,8 @@ a {
     font: inherit;
     color: inherit;
     cursor: pointer;
-    vertical-align: middle;
+    vertical-align: baseline;
+    line-height: inherit;
     text-decoration: none;
     transition: text-decoration var(--transition-normal), opacity var(--transition-fast);
 }
@@ -198,6 +195,29 @@ a {
     overflow: hidden;
 }
 
+.info-carousel-caption-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7em;
+    margin-top: 0.15em;
+}
+
+.info-carousel-counter {
+    font-family: var(--font-regular);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-sm);
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1, "case" 1;
+    color: var(--color-black);
+    flex-shrink: 0;
+}
+
+.info-carousel-caption-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
 .info-carousel-caption {
     display: flex;
     flex-direction: column;
@@ -224,27 +244,35 @@ a {
 }
 
 .info-project-year {
-    font-variant-numeric: oldstyle-nums;
-    font-feature-settings: "onum" 1;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-feature-settings: "lnum" 1, "tnum" 1;
+}
+
+/* @ in maiuscolo (case-sensitive/titling) per istituzioni e info progetti */
+.at-majuscule {
+    font-feature-settings: "case" 1;
 }
 
 .info-gallery-track {
-    display: flex;
-    flex-wrap: nowrap;
+    position: relative;
+    width: 100%;
     height: 100%;
-    flex: 0 0 auto;
-    transition: transform 0.55s var(--carousel-easing), opacity 0.4s ease-out;
-    will-change: transform;
 }
 
 .info-gallery-slide {
-    height: 100%;
+    position: absolute;
+    inset: 0;
     width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    flex: 0 0 100%;
-    min-width: 100%;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.info-gallery-slide--active {
+    opacity: 1;
 }
 
 .info-gallery-slide img,
@@ -273,11 +301,15 @@ a {
     scrollbar-width: thin;
 }
 
-.intro-text {
+.intro-text,
+.small-text {
     font-family: var(--font-regular);
     font-size: var(--font-size-body);
     line-height: var(--line-height-md);
     text-align: left;
+}
+
+.intro-text {
     text-wrap: pretty;
 }
 
@@ -285,13 +317,6 @@ a {
     .intro-text {
         max-width: 75%;
     }
-}
-
-.small-text {
-    font-family: var(--font-regular);
-    font-size: var(--font-size-body);
-    line-height: var(--line-height-md);
-    text-align: left;
 }
 
 .platform-links,
@@ -448,10 +473,6 @@ div::-webkit-scrollbar {
     .error-404-numbers,
     .error-404-inner {
         animation: none;
-    }
-
-    .info-gallery-track {
-        transition-duration: 0.15s;
     }
 }
 

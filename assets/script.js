@@ -17,11 +17,11 @@
         videoExtensions: ['mp4', 'webm', 'mov', 'ogg'],
         carousel: {
             transitionMs: 600,
-            transitionCss: 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease-out',
             touchSwipeThreshold: 40,
             touchDirectionThreshold: 20
         },
-        mobileBreakpoint: 768
+        mobileBreakpoint: 768,
+        preloadFirstImageCount: 2
     };
 
     const state = {
@@ -95,7 +95,7 @@
             'singolarita-multiple': { extra: '@Iuav, + Jolanda Baudino, Chiara Lorenzo, Irene Mazzoleni', year: '2024', title: 'Singolarità multiple. Esoeditoria in Italia 1920–1980' },
             'modernizzare-stanca': { extra: '@Spazio Alelaie', year: '2024' },
             '4visions': { extra: '@MAT', year: '2023' },
-            'meme-things-first': { extra: '@Iuav, + Rebecca Bertero, Serena de Mola', year: '2024', title: 'Meme Things First — Design between politics, education and memetics' },
+            'meme-things-first': { extra: '@Iuav, + Rebecca Bertero, Serena De Mola', year: '2024', title: 'Meme Things First — Design between politics, education and memetics' },
             'biennale-parola': { extra: '@Iuav, + Giulia Gatta, Tommaso Antonelli', year: '2024' },
             'la-dimora-del-minotauro': { extra: '@Apparati Radicali', year: '2025', title: "The Minotaur's abode" }
         },
@@ -104,7 +104,7 @@
             'singolarita-multiple': { extra: '@Iuav, + Jolanda Baudino, Chiara Lorenzo, Irene Mazzoleni', year: '2024', title: 'Singolarità multiple. Esoeditoria in Italia 1920–1980' },
             'modernizzare-stanca': { extra: '@Spazio Alelaie', year: '2024' },
             '4visions': { extra: '@MAT', year: '2023' },
-            'meme-things-first': { extra: '@Iuav, + Rebecca Bertero, Serena de Mola', year: '2024', title: 'Meme Things First — Design tra politica, educazione e memetica' },
+            'meme-things-first': { extra: '@Iuav, + Rebecca Bertero, Serena De Mola', year: '2024', title: 'Meme Things First — Design tra politica, educazione e memetica' },
             'biennale-parola': { extra: '@Iuav, + Giulia Gatta, Tommaso Antonelli', year: '2024' },
             'la-dimora-del-minotauro': { extra: '@Apparati Radicali', year: '2025' }
         }
@@ -123,7 +123,7 @@
     const stripHtml = (html) => {
         const temp = document.createElement('div');
         temp.innerHTML = html;
-        return temp.textContent || temp.innerText || '';
+        return temp.textContent ?? '';
     };
 
     /** Parses extra string into @ part and collaborators. Format: "@X, + Name1, Name2" */
@@ -176,12 +176,11 @@
     }
 
     function updateFooterDateTimeCached() {
-        const footerDateTimeElements = document.querySelectorAll('.footer-datetime');
-        if (footerDateTimeElements.length > 0) {
-            const now = new Date();
-            const dateTimeString = buildFooterDateTimeHtml(now);
-            footerDateTimeElements.forEach(el => el.innerHTML = dateTimeString);
-        }
+        const now = new Date();
+        const dateTimeString = buildFooterDateTimeHtml(now);
+        document.querySelectorAll('.footer-datetime').forEach((el) => {
+            el.innerHTML = dateTimeString;
+        });
     }
 
     function wrapFooterDashes() {
@@ -265,7 +264,9 @@
             }
         });
 
-        if (document.getElementById('info-carousel')) updateInfoCarouselCaption();
+        if (document.getElementById('info-carousel')) {
+            updateInfoCarouselCaption();
+        }
     }
 
     function initializeLanguage() {
@@ -317,6 +318,13 @@
             img.alt = plainTitle ? `${plainTitle} — image ${projectIndex + 1}` : `project image ${projectIndex + 1}`;
             img.decoding = 'async';
             img.loading = globalIndex < 3 ? 'eager' : 'lazy';
+            if (globalIndex === 0) {
+                img.fetchPriority = 'high';
+                img.setAttribute('fetchpriority', 'high');
+            } else if (globalIndex >= 3) {
+                img.fetchPriority = 'low';
+                img.setAttribute('fetchpriority', 'low');
+            }
             img.draggable = false;
 
             ['contextmenu', 'dragstart'].forEach(evt => img.addEventListener(evt, e => e.preventDefault()));
@@ -341,6 +349,8 @@
             return array;
         })([...projectEntries]);
 
+        preloadFirstCarouselImages(state.gallery.shuffledProjects);
+
         let globalIndex = 0;
         state.gallery.slides = [];
         state.gallery.shuffledProjects.forEach(entry => {
@@ -359,6 +369,7 @@
         });
 
         state.gallery.currentSlide = 0;
+        track.children[0]?.classList.add('info-gallery-slide--active');
         const initDims = () => {
             setInfoCarouselDimensions();
             goToInfoSlide(0, false);
@@ -376,8 +387,31 @@
                 setInfoCarouselDimensions();
                 goToInfoSlide(state.gallery.currentSlide, false);
             });
-            if (carousel) ro.observe(carousel);
+            ro.observe(carousel);
         }
+    }
+
+    /** Preload first N image URLs (no videos) so the carousel starts loading before paint. */
+    function preloadFirstCarouselImages(projectEntries) {
+        const max = CONFIG.preloadFirstImageCount;
+        const urls = [];
+        for (const entry of projectEntries) {
+            const sources = (entry.getAttribute('data-images') || '').split('|').map(s => s.trim()).filter(Boolean);
+            for (const src of sources) {
+                const ext = src.split('.').pop().toLowerCase();
+                if (CONFIG.videoExtensions.includes(ext)) continue;
+                urls.push(src);
+                if (urls.length >= max) break;
+            }
+            if (urls.length >= max) break;
+        }
+        urls.forEach((href) => {
+            const link = document.createElement('link');
+            link.rel = 'preload';
+            link.as = 'image';
+            link.href = href;
+            document.head.appendChild(link);
+        });
     }
 
     function getMaxAspectRatio() {
@@ -424,7 +458,8 @@
             viewport.classList.add('info-carousel-viewport--ready');
             return;
         }
-        viewport.classList.remove('info-carousel-viewport--ready');
+        /* Do not remove --ready on mobile: it hides the caption and causes flicker on scroll/resize
+           when the class is re-added asynchronously. Only update height in the callback. */
         const style = getComputedStyle(carousel);
         const paddingLeft = parseFloat(style.paddingLeft) || 0;
         const paddingRight = parseFloat(style.paddingRight) || 0;
@@ -437,20 +472,8 @@
     }
 
     function setInfoCarouselDimensions() {
-        const carousel = document.getElementById('info-carousel');
-        const viewport = carousel?.querySelector('.info-carousel-viewport');
         const track = document.getElementById('info-gallery-track');
-        if (!carousel || !track) return;
-        const n = state.gallery.slides.length;
-        if (n === 0) return;
-        const measureEl = viewport || carousel;
-        const style = getComputedStyle(carousel);
-        const w = measureEl.offsetWidth || (carousel.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0));
-        track.style.width = (w * n) + 'px';
-        track.querySelectorAll('.info-gallery-slide').forEach(slide => {
-            slide.style.flex = `0 0 ${w}px`;
-            slide.style.minWidth = w + 'px';
-        });
+        if (!track || state.gallery.slides.length === 0) return;
         setMobileCarouselHeight();
     }
 
@@ -463,36 +486,30 @@
         state.gallery.isTransitioning = true;
         state.gallery.currentSlide = index;
 
-        const carousel = document.getElementById('info-carousel');
-        const viewport = carousel?.querySelector('.info-carousel-viewport');
         const track = document.getElementById('info-gallery-track');
-        if (!track || !carousel) return;
+        if (!track) return;
 
-        const measureEl = viewport || carousel;
-        const slideWidth = measureEl.offsetWidth || 0;
-        const offset = -index * slideWidth;
-
-        if (!animate) {
-            track.style.transition = 'none';
-            track.style.opacity = '1';
-            track.style.transform = `translateX(${offset}px)`;
-            void track.offsetWidth;
-            track.style.transition = CONFIG.carousel.transitionCss;
-        } else {
-            track.style.transition = CONFIG.carousel.transitionCss;
-            track.style.opacity = '0.88';
-            track.style.transform = `translateX(${offset}px)`;
-            requestAnimationFrame(() => { track.style.opacity = '1'; });
-        }
+        track.querySelectorAll('.info-gallery-slide').forEach((slide, i) => {
+            slide.classList.toggle('info-gallery-slide--active', i === index);
+        });
 
         updateInfoCarouselCaption();
+        updateInfoCarouselCounter();
 
         setTimeout(() => {
             const activeSlide = track.children[index];
             const video = activeSlide?.querySelector('video');
-            if (video && video.paused) video.play().catch(() => {});
+            if (video?.paused) video.play().catch(() => {});
             state.gallery.isTransitioning = false;
         }, animate ? CONFIG.carousel.transitionMs : 50);
+    }
+
+    function updateInfoCarouselCounter() {
+        const counterEl = document.getElementById('info-carousel-counter');
+        if (!counterEl) return;
+        const n = state.gallery.slides.length;
+        const current = state.gallery.currentSlide + 1;
+        counterEl.textContent = n ? `(${current}/${n})` : '';
     }
 
     function updateInfoCarouselCaption() {
@@ -502,14 +519,19 @@
         if (!titleEl || !yearEl) return;
         if (slide) {
             titleEl.innerHTML = slide.title || '';
-            const atPart = slide.extra ? slide.extra + ', ' : '';
-            const yearPart = slide.year || '';
-            const collabPrefix = state.currentLang === 'it' ? ', con: ' : ', with: ';
-            const collabPart = slide.collaborators ? collabPrefix + slide.collaborators : '';
-            yearEl.textContent = atPart + yearPart + collabPart;
+            let extraPart = slide.extra || '';
+            if (extraPart.startsWith('@')) {
+                extraPart = '<span class="at-majuscule">@</span>' + extraPart.slice(1);
+            }
+            const parts = [
+                extraPart,
+                slide.year || '',
+                slide.collaborators ? '+ ' + slide.collaborators : ''
+            ].filter(Boolean);
+            yearEl.innerHTML = parts.join('\u2009/\u2009');
         } else {
             titleEl.innerHTML = '';
-            yearEl.textContent = '';
+            yearEl.innerHTML = '';
         }
     }
 
@@ -517,11 +539,19 @@
         const carousel = document.getElementById('info-carousel');
         if (!carousel) return;
 
-        const updateCursor = () => {
+        const updateCursor = (e) => {
             const n = state.gallery.slides.length;
-            carousel.style.cursor = n > 1 ? 'crosshair' : 'default';
+            if (n <= 1 || !e) {
+                carousel.style.cursor = 'default';
+                return;
+            }
+            const rect = carousel.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            carousel.style.cursor = x < rect.width / 2 ? 'w-resize' : 'e-resize';
         };
-        updateCursor();
+
+        carousel.addEventListener('mousemove', updateCursor);
+        carousel.addEventListener('mouseleave', () => { carousel.style.cursor = 'default'; });
 
         carousel.addEventListener('click', (e) => {
             if (state.gallery.slides.length <= 1) return;
@@ -619,8 +649,7 @@
         });
 
         window.addEventListener('hashchange', () => {
-            const hash = window.location.hash.slice(1);
-            const targetLang = hash === 'en' ? 'en' : 'it';
+            const targetLang = window.location.hash.slice(1) === 'en' ? 'en' : 'it';
             if (state.currentLang !== targetLang) setLanguage(targetLang);
         });
 
