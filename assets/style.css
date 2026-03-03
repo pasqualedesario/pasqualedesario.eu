@@ -4,7 +4,6 @@
     --color-gray: #bebfc3;
     --color-footer: #f2ff26;
     --font-size-sm: clamp(0.68rem, 0.68rem + 0.07vw, 0.74rem);
-    --font-size-md: clamp(1rem, 1rem + 0.07vw, 1.05rem);
     --font-size-body: clamp(0.84rem, 0.84rem + 0.17vw, 1.05rem);
     --font-size-lg: clamp(0.88rem, 0.88rem + 0.07vw, 0.93rem);
     --line-height-sm: clamp(0.98rem, 0.98rem + 0.09vw, 1.05rem);
@@ -244,8 +243,8 @@ a {
 }
 
 .info-project-year {
-    font-variant-numeric: lining-nums tabular-nums;
-    font-feature-settings: "lnum" 1, "tnum" 1;
+    font-variant-numeric: oldstyle-nums;
+    font-feature-settings: "onum" 1;
 }
 
 /* @ in maiuscolo (case-sensitive/titling) per istituzioni e info progetti */
@@ -262,8 +261,6 @@ a {
 .info-gallery-slide {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -323,6 +320,11 @@ a {
 .contact-block {
     display: block;
     margin-top: var(--space-sm);
+}
+
+/* Evita parole orfane nella riga (es. pubblicazione Meme Things First) */
+.platform-links:has(.text-pretty) {
+    text-wrap: pretty;
 }
 
 .text-pretty {
