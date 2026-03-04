@@ -1,3 +1,4 @@
+/* Design system: single source of truth. */
 :root {
     --color-white: #fff;
     --color-black: #000;
@@ -266,6 +267,7 @@ a {
     justify-content: flex-start;
     opacity: 0;
     pointer-events: none;
+    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .info-gallery-slide--active {
@@ -475,6 +477,10 @@ div::-webkit-scrollbar {
     .error-404-numbers,
     .error-404-inner {
         animation: none;
+    }
+
+    .info-gallery-slide {
+        transition: none;
     }
 }
 

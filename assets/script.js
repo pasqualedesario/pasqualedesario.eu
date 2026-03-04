@@ -28,6 +28,7 @@
         currentTemperature: null,
         currentLang: 'it',
         isChangingLanguage: false,
+        lenis: null,
         gallery: {
             slides: [],
             shuffledProjects: [],
@@ -202,17 +203,14 @@
         state.isChangingLanguage = true;
         state.currentLang = lang;
 
-        // Update URL hash without scrolling
         const newHash = lang === 'it' ? '#it' : '#en';
         if (window.location.hash !== newHash) {
             history.replaceState(null, '', newHash);
         }
 
-        // Update HTML lang attribute
         const htmlRoot = document.getElementById('html-root');
         if (htmlRoot) htmlRoot.setAttribute('lang', lang);
 
-        // Update Text Content
         document.querySelectorAll('[data-lang]').forEach(element => {
             const key = element.getAttribute('data-lang');
             if (translations[lang]?.[key]) {
@@ -220,16 +218,12 @@
             }
         });
 
-        // Update Gallery Metadata if active
-        if (state.gallery.slides.length > 0) {
-            updateProjectMetadata(lang);
-        }
+        if (state.gallery.slides.length > 0) updateProjectMetadata(lang);
 
         state.isChangingLanguage = false;
     }
 
     function updateProjectMetadata(lang) {
-        // Update DOM metadata
         document.querySelectorAll('#project-data .project-entry').forEach(entry => {
             const projectId = entry.getAttribute('data-project-id');
             if (!projectId) return;
@@ -250,7 +244,6 @@
             const title = entry.getAttribute('data-title') || '';
             const { atPart, collaborators } = parseExtra(extra);
             const imagesAttr = entry.getAttribute('data-images') || '';
-            // Determine how many slides this project generated
             const count = imagesAttr.split('|').map(s => s.trim()).filter(Boolean).length;
 
             for (let i = 0; i < count; i++) {
@@ -272,10 +265,10 @@
     function initializeLanguage() {
         const hash = window.location.hash.substring(1);
         if (hash === 'en') {
-            state.currentLang = 'it'; // force update
+            state.currentLang = 'it';
             setLanguage('en');
         } else {
-            state.currentLang = 'en'; // force update
+            state.currentLang = 'en';
             setLanguage('it');
         }
     }
@@ -391,7 +384,7 @@
         }
     }
 
-    /** Preload first N image URLs (no videos) so the carousel starts loading before paint. */
+    /** Preload first N carousel images (no videos). */
     function preloadFirstCarouselImages(projectEntries) {
         const max = CONFIG.preloadFirstImageCount;
         const urls = [];
@@ -458,8 +451,6 @@
             viewport.classList.add('info-carousel-viewport--ready');
             return;
         }
-        /* Do not remove --ready on mobile: it hides the caption and causes flicker on scroll/resize
-           when the class is re-added asynchronously. Only update height in the callback. */
         const style = getComputedStyle(carousel);
         const paddingLeft = parseFloat(style.paddingLeft) || 0;
         const paddingRight = parseFloat(style.paddingRight) || 0;
@@ -483,25 +474,51 @@
         index = Math.max(0, Math.min(index, slides.length - 1));
         if (isTransitioning && animate) return;
 
-        state.gallery.isTransitioning = true;
-        state.gallery.currentSlide = index;
-
         const track = document.getElementById('info-gallery-track');
         if (!track) return;
 
-        track.querySelectorAll('.info-gallery-slide').forEach((slide, i) => {
-            slide.classList.toggle('info-gallery-slide--active', i === index);
-        });
+        const prevIndex = state.gallery.currentSlide;
+        state.gallery.isTransitioning = true;
+        state.gallery.currentSlide = index;
 
-        updateInfoCarouselCaption();
-        updateInfoCarouselCounter();
+        const prevSlide = track.children[prevIndex];
+        const nextSlide = track.children[index];
+        const useGsap = animate && typeof gsap !== 'undefined' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        setTimeout(() => {
-            const activeSlide = track.children[index];
-            const video = activeSlide?.querySelector('video');
-            if (video?.paused) video.play().catch(() => {});
-            state.gallery.isTransitioning = false;
-        }, animate ? CONFIG.carousel.transitionMs : 50);
+        if (useGsap && prevSlide && nextSlide && prevIndex !== index) {
+            nextSlide.style.opacity = '0';
+            track.querySelectorAll('.info-gallery-slide').forEach((slide, i) => {
+                slide.classList.toggle('info-gallery-slide--active', i === index);
+            });
+            updateInfoCarouselCaption();
+            updateInfoCarouselCounter();
+            gsap.to(prevSlide, { opacity: 0, duration: 0.3, ease: 'power2.in' });
+            gsap.to(nextSlide, {
+                opacity: 1,
+                duration: 0.4,
+                delay: 0.05,
+                ease: 'power2.out',
+                onComplete: () => {
+                    prevSlide.style.opacity = '';
+                    nextSlide.style.opacity = '';
+                    const video = nextSlide.querySelector('video');
+                    if (video?.paused) video.play().catch(() => {});
+                    state.gallery.isTransitioning = false;
+                }
+            });
+        } else {
+            track.querySelectorAll('.info-gallery-slide').forEach((slide, i) => {
+                slide.classList.toggle('info-gallery-slide--active', i === index);
+            });
+            updateInfoCarouselCaption();
+            updateInfoCarouselCounter();
+            setTimeout(() => {
+                const activeSlide = track.children[index];
+                const video = activeSlide?.querySelector('video');
+                if (video?.paused) video.play().catch(() => {});
+                state.gallery.isTransitioning = false;
+            }, animate ? CONFIG.carousel.transitionMs : 50);
+        }
     }
 
     function updateInfoCarouselCounter() {
@@ -620,18 +637,53 @@
     }
 
     // ========================================================================
+    // LENIS SMOOTH SCROLL
+    // ========================================================================
+
+    function initLenis() {
+        const wrapper = document.querySelector('.info-body');
+        if (!wrapper || typeof Lenis === 'undefined') return;
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        state.lenis = new Lenis({
+            wrapper: wrapper,
+            duration: 1.2,
+            easing: (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
+            direction: 'vertical',
+            gestureDirection: 'vertical',
+            smooth: true,
+            smoothTouch: false,
+            touchMultiplier: 2
+        });
+
+        function raf(time) {
+            state.lenis?.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+    }
+
+    // ========================================================================
     // INITIALIZATION
     // ========================================================================
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Footer init
+        const scrollWrapper = document.querySelector('.info-body');
+        if (scrollWrapper) {
+            if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+            scrollWrapper.scrollTop = 0;
+        }
+
         updateFooterDateTimeCached();
         setInterval(updateFooterDateTimeCached, CONFIG.updateIntervals.time);
-
         fetchTemperature();
         setInterval(fetchTemperature, CONFIG.updateIntervals.weather);
-
         wrapFooterDashes();
+        initializeLanguage();
+        initLenis();
+        initInfoCarousel();
+        initVideoObserver();
+        setupLinkHover();
 
         document.body.addEventListener('click', (e) => {
             const langLink = e.target.closest('.lang-link');
@@ -644,7 +696,11 @@
             const siteTitle = e.target.closest('.site-title');
             if (siteTitle && ['/', '/index.html', ''].includes(window.location.pathname)) {
                 e.preventDefault();
-                document.querySelector('.info-body')?.scrollTo({ top: 0, behavior: 'smooth' });
+                if (state.lenis) {
+                    state.lenis.scrollTo(0, { duration: 1.2 });
+                } else if (scrollWrapper) {
+                    scrollWrapper.scrollTo({ top: 0, behavior: 'smooth' });
+                }
             }
         });
 
@@ -652,12 +708,6 @@
             const targetLang = window.location.hash.slice(1) === 'en' ? 'en' : 'it';
             if (state.currentLang !== targetLang) setLanguage(targetLang);
         });
-
-        initializeLanguage();
-
-        // Info carousel (single-page layout)
-        initInfoCarousel();
-        initVideoObserver();
     });
 
 })();
