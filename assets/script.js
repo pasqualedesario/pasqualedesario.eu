@@ -28,12 +28,18 @@
         currentTemperature: null,
         currentLang: 'it',
         isChangingLanguage: false,
+        hasBoundLanguageLinks: false,
+        hasBoundGlobalHandlers: false,
         lenis: null,
+        resizeRafId: null,
+        carouselTransitionTimer: null,
+        pendingSlideToken: 0,
         gallery: {
             slides: [],
             shuffledProjects: [],
             currentSlide: 0,
-            isTransitioning: false
+            isTransitioning: false,
+            hasInitialized: false
         }
     };
 
@@ -57,7 +63,7 @@
             'information-design': 'Information Design',
             'type-design': 'Type Design',
             'visual-identity': 'Visual Identity',
-            'web-design': 'Web Design',
+            'web-design': 'Web Design/Development',
             'contact': 'mail',
             'platforms': 'platforms',
             'typeset-in': '🧰 Typeset in',
@@ -80,7 +86,7 @@
             'information-design': 'Information Design',
             'type-design': 'Type Design',
             'visual-identity': 'Identità visiva',
-            'web-design': 'Web Design',
+            'web-design': 'Web Design/Development',
             'contact': 'mail',
             'platforms': 'piattaforme',
             'typeset-in': '🧰 Composto in',
@@ -138,6 +144,20 @@
         };
     };
 
+    const getMediaSources = (imagesAttr) => (imagesAttr || '')
+        .split('|')
+        .map((source) => source.trim())
+        .filter(Boolean);
+
+    const getFileExtension = (src) => {
+        if (!src || typeof src !== 'string') return '';
+        const clean = src.split('?')[0].split('#')[0];
+        const parts = clean.split('.');
+        return parts.length > 1 ? parts.pop().toLowerCase() : '';
+    };
+
+    const isVideoSource = (src) => CONFIG.videoExtensions.includes(getFileExtension(src));
+
     // ========================================================================
     // FOOTER LOGIC
     // ========================================================================
@@ -166,13 +186,14 @@
     async function fetchTemperature() {
         try {
             const response = await fetch(CONFIG.weatherApiUrl);
+            if (!response.ok) return;
             const data = await response.json();
             if (data.current_weather?.temperature !== undefined) {
                 state.currentTemperature = Math.round(data.current_weather.temperature);
                 updateFooterDateTimeCached();
             }
         } catch (error) {
-            console.error('Error fetching temperature:', error);
+            // Keep UI responsive even if weather endpoint fails temporarily.
         }
     }
 
@@ -197,30 +218,34 @@
     // ========================================================================
 
     function setLanguage(lang) {
+        if (!translations[lang]) return;
         if (state.currentLang === lang) return;
         if (state.isChangingLanguage) return;
 
         state.isChangingLanguage = true;
-        state.currentLang = lang;
+        try {
+            state.currentLang = lang;
 
-        const newHash = lang === 'it' ? '#it' : '#en';
-        if (window.location.hash !== newHash) {
-            history.replaceState(null, '', newHash);
-        }
-
-        const htmlRoot = document.getElementById('html-root');
-        if (htmlRoot) htmlRoot.setAttribute('lang', lang);
-
-        document.querySelectorAll('[data-lang]').forEach(element => {
-            const key = element.getAttribute('data-lang');
-            if (translations[lang]?.[key]) {
-                element.innerHTML = translations[lang][key];
+            const newHash = lang === 'it' ? '#it' : '#en';
+            if (window.location.hash !== newHash) {
+                history.replaceState(null, '', newHash);
             }
-        });
 
-        if (state.gallery.slides.length > 0) updateProjectMetadata(lang);
+            const htmlRoot = document.getElementById('html-root');
+            if (htmlRoot) htmlRoot.setAttribute('lang', lang);
 
-        state.isChangingLanguage = false;
+            document.querySelectorAll('[data-lang]').forEach(element => {
+                const key = element.getAttribute('data-lang');
+                if (translations[lang]?.[key]) {
+                    element.innerHTML = translations[lang][key];
+                }
+            });
+
+            updateLanguageSwitcherState();
+            if (state.gallery.slides.length > 0) updateProjectMetadata(lang);
+        } finally {
+            state.isChangingLanguage = false;
+        }
     }
 
     function updateProjectMetadata(lang) {
@@ -229,11 +254,9 @@
             if (!projectId) return;
 
             const metadata = projectMetadata[lang]?.[projectId];
-            if (metadata) {
-                if (metadata.extra) entry.setAttribute('data-extra', metadata.extra);
-                if (metadata.year) entry.setAttribute('data-year', metadata.year);
-                if (metadata.title) entry.setAttribute('data-title', metadata.title);
-            }
+            entry.setAttribute('data-extra', metadata?.extra || '');
+            entry.setAttribute('data-year', metadata?.year || '');
+            entry.setAttribute('data-title', metadata?.title || '');
         });
 
         // Update runtime gallery slides
@@ -244,7 +267,7 @@
             const title = entry.getAttribute('data-title') || '';
             const { atPart, collaborators } = parseExtra(extra);
             const imagesAttr = entry.getAttribute('data-images') || '';
-            const count = imagesAttr.split('|').map(s => s.trim()).filter(Boolean).length;
+            const count = getMediaSources(imagesAttr).length;
 
             for (let i = 0; i < count; i++) {
                 if (slideIdx < state.gallery.slides.length) {
@@ -271,6 +294,51 @@
             state.currentLang = 'en';
             setLanguage('it');
         }
+        updateLanguageSwitcherState();
+    }
+
+    function updateLanguageSwitcherState() {
+        document.querySelectorAll('.lang-link').forEach((btn) => {
+            const code = btn.getAttribute('data-lang-code');
+            const isActive = code === state.currentLang;
+            btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+    }
+
+    function bindLanguageLinks() {
+        if (state.hasBoundLanguageLinks) return;
+        document.querySelectorAll('.lang-link').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const lang = btn.getAttribute('data-lang-code');
+                if (lang) setLanguage(lang);
+            });
+        });
+        state.hasBoundLanguageLinks = true;
+    }
+
+    function bindGlobalHandlers(scrollWrapper) {
+        if (state.hasBoundGlobalHandlers) return;
+
+        document.body.addEventListener('click', (e) => {
+            const siteTitle = e.target.closest?.('.site-title');
+            if (siteTitle && ['/', '/index.html', ''].includes(window.location.pathname)) {
+                e.preventDefault();
+                if (state.lenis) {
+                    state.lenis.scrollTo(0, { duration: 1.2 });
+                } else if (scrollWrapper) {
+                    scrollWrapper.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        });
+
+        window.addEventListener('hashchange', () => {
+            const targetLang = window.location.hash.slice(1) === 'en' ? 'en' : 'it';
+            if (state.currentLang !== targetLang) setLanguage(targetLang);
+        });
+
+        state.hasBoundGlobalHandlers = true;
     }
 
     // ========================================================================
@@ -280,8 +348,8 @@
     function createInfoSlideElement(container, src, title, projectIndex, globalIndex) {
         const slideEl = document.createElement('div');
         slideEl.className = 'info-gallery-slide';
-        const ext = src.split('.').pop().toLowerCase();
-        const isVideo = CONFIG.videoExtensions.includes(ext);
+        const ext = getFileExtension(src);
+        const isVideo = isVideoSource(src);
 
         if (isVideo) {
             const video = document.createElement('video');
@@ -329,6 +397,7 @@
     }
 
     function initInfoCarousel() {
+        if (state.gallery.hasInitialized) return;
         const track = document.getElementById('info-gallery-track');
         const carousel = document.getElementById('info-carousel');
         if (!track || !carousel) return;
@@ -351,7 +420,7 @@
             const title = entry.getAttribute('data-title') || '';
             const extra = entry.getAttribute('data-extra') || '';
             const year = entry.getAttribute('data-year') || '';
-            const sources = (entry.getAttribute('data-images') || '').split('|').map(s => s.trim()).filter(Boolean);
+            const sources = getMediaSources(entry.getAttribute('data-images'));
             const { atPart, collaborators } = parseExtra(extra);
 
             sources.forEach((src, index) => {
@@ -371,17 +440,21 @@
         setTimeout(initDims, 100);
         setupInfoCarouselInteraction();
 
-        window.addEventListener('resize', () => {
-            setInfoCarouselDimensions();
-            goToInfoSlide(state.gallery.currentSlide, false);
-        });
-        if (typeof ResizeObserver !== 'undefined') {
-            const ro = new ResizeObserver(() => {
+        const handleResize = () => {
+            if (state.resizeRafId) cancelAnimationFrame(state.resizeRafId);
+            state.resizeRafId = requestAnimationFrame(() => {
+                state.resizeRafId = null;
                 setInfoCarouselDimensions();
                 goToInfoSlide(state.gallery.currentSlide, false);
             });
+        };
+        window.addEventListener('resize', handleResize);
+
+        if (typeof ResizeObserver !== 'undefined') {
+            const ro = new ResizeObserver(handleResize);
             ro.observe(carousel);
         }
+        state.gallery.hasInitialized = true;
     }
 
     /** Preload first N carousel images (no videos). */
@@ -389,10 +462,9 @@
         const max = CONFIG.preloadFirstImageCount;
         const urls = [];
         for (const entry of projectEntries) {
-            const sources = (entry.getAttribute('data-images') || '').split('|').map(s => s.trim()).filter(Boolean);
+            const sources = getMediaSources(entry.getAttribute('data-images'));
             for (const src of sources) {
-                const ext = src.split('.').pop().toLowerCase();
-                if (CONFIG.videoExtensions.includes(ext)) continue;
+                if (isVideoSource(src)) continue;
                 urls.push(src);
                 if (urls.length >= max) break;
             }
@@ -421,8 +493,7 @@
                 if (--remaining <= 0) resolve(maxRatio);
             };
             slides.forEach(({ src }) => {
-                const ext = src.split('.').pop().toLowerCase();
-                if (CONFIG.videoExtensions.includes(ext)) {
+                if (isVideoSource(src)) {
                     const video = document.createElement('video');
                     video.preload = 'metadata';
                     video.onloadedmetadata = () => {
@@ -478,6 +549,12 @@
         if (!track) return;
 
         const prevIndex = state.gallery.currentSlide;
+        const transitionToken = ++state.pendingSlideToken;
+        if (state.carouselTransitionTimer) {
+            clearTimeout(state.carouselTransitionTimer);
+            state.carouselTransitionTimer = null;
+        }
+
         state.gallery.isTransitioning = true;
         state.gallery.currentSlide = index;
 
@@ -499,10 +576,11 @@
                 delay: 0.05,
                 ease: 'power2.out',
                 onComplete: () => {
+                    if (transitionToken !== state.pendingSlideToken) return;
                     prevSlide.style.opacity = '';
                     nextSlide.style.opacity = '';
                     const video = nextSlide.querySelector('video');
-                    if (video?.paused) video.play().catch(() => {});
+                    if (video?.paused) video.play().catch(() => { });
                     state.gallery.isTransitioning = false;
                 }
             });
@@ -512,11 +590,13 @@
             });
             updateInfoCarouselCaption();
             updateInfoCarouselCounter();
-            setTimeout(() => {
+            state.carouselTransitionTimer = setTimeout(() => {
+                if (transitionToken !== state.pendingSlideToken) return;
                 const activeSlide = track.children[index];
                 const video = activeSlide?.querySelector('video');
-                if (video?.paused) video.play().catch(() => {});
+                if (video?.paused) video.play().catch(() => { });
                 state.gallery.isTransitioning = false;
+                state.carouselTransitionTimer = null;
             }, animate ? CONFIG.carousel.transitionMs : 50);
         }
     }
@@ -680,34 +760,14 @@
         setInterval(fetchTemperature, CONFIG.updateIntervals.weather);
         wrapFooterDashes();
         initializeLanguage();
+
+        bindLanguageLinks();
+
         initLenis();
         initInfoCarousel();
         initVideoObserver();
-        setupLinkHover();
-
-        document.body.addEventListener('click', (e) => {
-            const langLink = e.target.closest('.lang-link');
-            if (langLink) {
-                e.preventDefault();
-                const lang = langLink.getAttribute('data-lang-code');
-                if (lang) setLanguage(lang);
-                return;
-            }
-            const siteTitle = e.target.closest('.site-title');
-            if (siteTitle && ['/', '/index.html', ''].includes(window.location.pathname)) {
-                e.preventDefault();
-                if (state.lenis) {
-                    state.lenis.scrollTo(0, { duration: 1.2 });
-                } else if (scrollWrapper) {
-                    scrollWrapper.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            }
-        });
-
-        window.addEventListener('hashchange', () => {
-            const targetLang = window.location.hash.slice(1) === 'en' ? 'en' : 'it';
-            if (state.currentLang !== targetLang) setLanguage(targetLang);
-        });
+        if (typeof setupLinkHover === 'function') setupLinkHover();
+        bindGlobalHandlers(scrollWrapper);
     });
 
 })();
