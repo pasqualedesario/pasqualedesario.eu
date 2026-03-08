@@ -68,12 +68,6 @@ a {
     text-decoration: none;
 }
 
-.u-link-underline {
-    text-decoration: none;
-    text-underline-offset: 2px;
-    transition: text-decoration var(--transition-normal), text-underline-offset var(--transition-fast), opacity var(--transition-fast);
-}
-
 /* ========================================================================
    TOP BAR
    ======================================================================== */
@@ -281,6 +275,10 @@ a {
 
 .info-gallery-slide--active {
     opacity: 1;
+}
+
+.info-gallery-slide picture {
+    display: contents;
 }
 
 .info-gallery-slide img,

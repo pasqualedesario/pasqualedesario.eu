@@ -63,7 +63,7 @@
             'information-design': 'Information Design',
             'type-design': 'Type Design',
             'visual-identity': 'Visual Identity',
-            'web-design': 'Web Design/Development',
+            'web-design': 'Web Design\u2009+\u2009Development',
             'contact': 'mail',
             'platforms': 'platforms',
             'typeset-in': '🧰 Typeset in',
@@ -86,7 +86,7 @@
             'information-design': 'Information Design',
             'type-design': 'Type Design',
             'visual-identity': 'Identità visiva',
-            'web-design': 'Web Design/Development',
+            'web-design': 'Web Design\u2009+\u2009Development',
             'contact': 'mail',
             'platforms': 'piattaforme',
             'typeset-in': '🧰 Composto in',
@@ -156,6 +156,14 @@
         return parts.length > 1 ? parts.pop().toLowerCase() : '';
     };
 
+    /** Given an image path (e.g. assets/images/MC_1.png), returns base path without extension. */
+    const getImageBasePath = (src) => {
+        if (!src || typeof src !== 'string') return '';
+        const clean = src.split('?')[0].split('#')[0];
+        const lastDot = clean.lastIndexOf('.');
+        return lastDot > 0 ? clean.slice(0, lastDot) : clean;
+    };
+
     const isVideoSource = (src) => CONFIG.videoExtensions.includes(getFileExtension(src));
 
     // ========================================================================
@@ -192,7 +200,7 @@
                 state.currentTemperature = Math.round(data.current_weather.temperature);
                 updateFooterDateTimeCached();
             }
-        } catch (error) {
+        } catch {
             // Keep UI responsive even if weather endpoint fails temporarily.
         }
     }
@@ -348,10 +356,10 @@
     function createInfoSlideElement(container, src, title, projectIndex, globalIndex) {
         const slideEl = document.createElement('div');
         slideEl.className = 'info-gallery-slide';
-        const ext = getFileExtension(src);
         const isVideo = isVideoSource(src);
 
         if (isVideo) {
+            const ext = getFileExtension(src);
             const video = document.createElement('video');
             Object.assign(video, {
                 autoplay: true, muted: true, playsInline: true, loop: true,
@@ -373,6 +381,14 @@
 
             slideEl.appendChild(video);
         } else {
+            const base = getImageBasePath(src);
+            const picture = document.createElement('picture');
+
+            const sourceWebp = document.createElement('source');
+            sourceWebp.type = 'image/webp';
+            sourceWebp.srcset = `${base}.webp`;
+            picture.appendChild(sourceWebp);
+
             const img = document.createElement('img');
             img.src = src;
             const plainTitle = stripHtml(title).trim();
@@ -391,7 +407,8 @@
             ['contextmenu', 'dragstart'].forEach(evt => img.addEventListener(evt, e => e.preventDefault()));
             Object.assign(img.style, { userSelect: 'none', pointerEvents: 'none' });
 
-            slideEl.appendChild(img);
+            picture.appendChild(img);
+            slideEl.appendChild(picture);
         }
         container.appendChild(slideEl);
     }
@@ -457,7 +474,7 @@
         state.gallery.hasInitialized = true;
     }
 
-    /** Preload first N carousel images (no videos). */
+    /** Preload first N carousel images (no videos). Uses WebP when available. */
     function preloadFirstCarouselImages(projectEntries) {
         const max = CONFIG.preloadFirstImageCount;
         const urls = [];
@@ -470,11 +487,13 @@
             }
             if (urls.length >= max) break;
         }
-        urls.forEach((href) => {
+        urls.forEach((src) => {
+            const base = getImageBasePath(src);
             const link = document.createElement('link');
             link.rel = 'preload';
             link.as = 'image';
-            link.href = href;
+            link.href = `${base}.webp`;
+            link.type = 'image/webp';
             document.head.appendChild(link);
         });
     }
@@ -766,7 +785,6 @@
         initLenis();
         initInfoCarousel();
         initVideoObserver();
-        if (typeof setupLinkHover === 'function') setupLinkHover();
         bindGlobalHandlers(scrollWrapper);
     });
 

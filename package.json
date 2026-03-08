@@ -1,0 +1,12 @@
+{
+  "name": "pasqualedesario.eu",
+  "private": true,
+  "scripts": {
+    "build:images": "node scripts/optimize-images.js",
+    "watch:images": "chokidar-cli \"assets/images/*.png\" \"assets/images/*.jpg\" \"assets/images/*.jpeg\" -c \"npm run build:images\""
+  },
+  "devDependencies": {
+    "chokidar-cli": "^3.0.0",
+    "sharp": "^0.33.5"
+  }
+}
