@@ -16,7 +16,7 @@
         },
         videoExtensions: ['mp4', 'webm', 'mov', 'ogg'],
         carousel: {
-            transitionMs: 600,
+            transitionMs: 450,
             touchSwipeThreshold: 40,
             touchDirectionThreshold: 20
         },
@@ -60,6 +60,7 @@
             'services': 'services',
             'art-direction': 'Art Direction',
             'book-design': 'Book Design',
+            'graphic-design': 'Graphic Design',
             'information-design': 'Information Design',
             'type-design': 'Type Design',
             'visual-identity': 'Visual Identity',
@@ -83,6 +84,7 @@
             'services': 'servizi',
             'art-direction': 'Art Direction',
             'book-design': 'Editoria',
+            'graphic-design': 'Graphic Design',
             'information-design': 'Information Design',
             'type-design': 'Type Design',
             'visual-identity': 'Identità visiva',
@@ -102,18 +104,22 @@
             'singolarita-multiple': { extra: '@Iuav, + Jolanda Baudino, Chiara Lorenzo, Irene Mazzoleni', year: '2024', title: 'Singolarità multiple. Esoeditoria in Italia 1920–1980' },
             'modernizzare-stanca': { extra: '@Spazio Alelaie', year: '2024' },
             '4visions': { extra: '@MAT', year: '2023' },
-            'meme-things-first': { extra: '@Iuav, + Rebecca Bertero, Serena De Mola', year: '2024', title: 'Meme Things First — Design between politics, education and memetics' },
+            'meme-things-first': { extra: '@Iuav, + Rebecca Bertero, Serena De Mola', year: '2024–2026', title: 'Meme Things First — Design between politics, education and memetics' },
             'biennale-parola': { extra: '@Iuav, + Giulia Gatta, Tommaso Antonelli', year: '2024' },
-            'la-dimora-del-minotauro': { extra: '@Apparati Radicali', year: '2025', title: "The Minotaur's abode" }
+            'la-dimora-del-minotauro': { extra: '@Apparati Radicali', year: '2025', title: "The Minotaur's abode" },
+            'forma': { extra: '@MAT', year: '2023', title: 'Forma' },
+            'ermes': { extra: '@PoliBa', year: '2022', title: 'Ermes' }
         },
         it: {
             'mimmo-castellano': { extra: '@Iuav', year: '2025' },
             'singolarita-multiple': { extra: '@Iuav, + Jolanda Baudino, Chiara Lorenzo, Irene Mazzoleni', year: '2024', title: 'Singolarità multiple. Esoeditoria in Italia 1920–1980' },
             'modernizzare-stanca': { extra: '@Spazio Alelaie', year: '2024' },
             '4visions': { extra: '@MAT', year: '2023' },
-            'meme-things-first': { extra: '@Iuav, + Rebecca Bertero, Serena De Mola', year: '2024', title: 'Meme Things First — Design tra politica, educazione e memetica' },
+            'meme-things-first': { extra: '@Iuav, + Rebecca Bertero, Serena De Mola', year: '2024–2026', title: 'Meme Things First — Design tra politica, educazione e memetica' },
             'biennale-parola': { extra: '@Iuav, + Giulia Gatta, Tommaso Antonelli', year: '2024' },
-            'la-dimora-del-minotauro': { extra: '@Apparati Radicali', year: '2025' }
+            'la-dimora-del-minotauro': { extra: '@Apparati Radicali', year: '2025' },
+            'forma': { extra: '@MAT', year: '2023', title: 'Forma' },
+            'ermes': { extra: '@PoliBa', year: '2022', title: 'Ermes' }
         }
     };
 
@@ -390,7 +396,9 @@
             picture.appendChild(sourceWebp);
 
             const img = document.createElement('img');
-            img.src = src;
+            // Fallback per casi in cui il browser non seleziona le <source>.
+            // Usiamo sempre WebP così la galleria resta funzionante anche se i PNG non ci sono.
+            img.src = `${base}.webp`;
             const plainTitle = stripHtml(title).trim();
             img.alt = plainTitle ? `${plainTitle} — image ${projectIndex + 1}` : `project image ${projectIndex + 1}`;
             img.decoding = 'async';
@@ -588,11 +596,11 @@
             });
             updateInfoCarouselCaption();
             updateInfoCarouselCounter();
-            gsap.to(prevSlide, { opacity: 0, duration: 0.3, ease: 'power2.in' });
+            gsap.to(prevSlide, { opacity: 0, duration: 0.25, ease: 'power2.in' });
             gsap.to(nextSlide, {
                 opacity: 1,
-                duration: 0.4,
-                delay: 0.05,
+                duration: 0.3,
+                delay: 0.02,
                 ease: 'power2.out',
                 onComplete: () => {
                     if (transitionToken !== state.pendingSlideToken) return;

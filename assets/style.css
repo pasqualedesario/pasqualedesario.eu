@@ -270,7 +270,7 @@ a {
     justify-content: flex-start;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .info-gallery-slide--active {
