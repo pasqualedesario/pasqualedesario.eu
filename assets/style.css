@@ -3,7 +3,7 @@
     --color-white: #fff;
     --color-black: #000;
     --color-gray: #bebfc3;
-    --color-footer: #f2ff26;
+    --color-footer: #cbfd34; /* Tennis Ball Yellow */
     --font-size-sm: clamp(0.68rem, 0.68rem + 0.07vw, 0.74rem);
     --font-size-body: clamp(0.84rem, 0.84rem + 0.17vw, 1.05rem);
     --font-size-lg: clamp(0.88rem, 0.88rem + 0.07vw, 0.93rem);
