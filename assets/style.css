@@ -94,7 +94,7 @@ a {
 /* Shared navigation typography */
 .info-body .site-title,
 .lang-switcher,
-.footer-marquee-text {
+.floating-box {
     font-size: var(--font-size-sm);
     line-height: var(--line-height-sm);
     text-transform: uppercase;
@@ -383,7 +383,7 @@ a {
 }
 
 .top-bar *::selection,
-.footer-marquee *::selection {
+.floating-box *::selection {
     color: var(--color-black);
 }
 
@@ -413,85 +413,88 @@ a {
 }
 
 /* ========================================================================
-   FOOTER MARQUEE
+   FLOATING BOUNCING BOXES (CTA, CV, TIME)
    ======================================================================== */
 
-.footer-marquee {
+.floating-box {
     position: fixed;
-    inset: auto 0 0 0;
-    background-color: var(--color-footer);
-    overflow: hidden;
-    overflow: clip;
+    top: 0;
+    left: 0;
     z-index: 10000;
-    padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-    height: calc(var(--footer-height) + env(safe-area-inset-bottom, 0px));
-    min-height: calc(var(--footer-height) + env(safe-area-inset-bottom, 0px));
-    max-height: calc(var(--footer-height) + env(safe-area-inset-bottom, 0px));
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    will-change: transform;
-    contain: paint;
-}
-
-.footer-marquee-content {
     display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.55em 0.85em;
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
+    text-decoration: none;
+    color: var(--color-black);
+    font-family: var(--font-regular);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.075em;
     white-space: nowrap;
-    animation: marquee 60s linear infinite;
+    cursor: pointer;
     will-change: transform;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+    /* Initial state: hidden until JS positions it */
+    opacity: 0;
 }
 
-.footer-marquee-text {
-    user-select: none;
+/* Opacities from the footer color (#cbfd34 -> rgb(203, 253, 52)) */
+.floating-cta {
+    background: rgba(203, 253, 52, 0.75);
+}
+.floating-cv {
+    background: rgba(203, 253, 52, 0.5);
+}
+.floating-time {
+    background: rgba(203, 253, 52, 0.25);
+    cursor: default;
+}
+
+.floating-box.is-bouncing {
+    opacity: 1;
+}
+
+.floating-box[href]:hover,
+.floating-box[href]:focus-visible {
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 2px;
+}
+.floating-cta:hover,
+.floating-cta:focus-visible {
+    background: rgba(203, 253, 52, 1.0);
+}
+.floating-cv:hover,
+.floating-cv:focus-visible {
+    background: rgba(203, 253, 52, 0.65);
+}
+
+.floating-box:active {
+    filter: brightness(0.95);
+}
+
+.floating-box-text {
     pointer-events: none;
+}
+
+/* Align and format numbers in the time box */
+.floating-time .num {
+    letter-spacing: 0;
+    font-variant-numeric: lining-nums tabular-nums;
     font-feature-settings: "lnum" 1, "tnum" 1;
 }
 
-.footer-marquee-text .num {
-    letter-spacing: 0;
-}
-
-.footer-marquee-text .grado-basso {
+.floating-time .grado-basso {
     font-size: 0.9em;
     vertical-align: 0.05em;
 }
 
-.footer-marquee-text .emdash {
-    position: relative;
-    top: -1px;
-    display: inline-block;
-}
-
-.footer-marquee-text a {
-    color: var(--color-black);
-    text-decoration: none;
-    text-underline-offset: 2px;
-    transition: text-decoration var(--transition-normal), text-underline-offset var(--transition-fast), opacity var(--transition-fast);
-    pointer-events: auto;
-    user-select: none;
-}
-
-.footer-marquee-text a:hover,
-.footer-marquee-text a:focus-visible {
-    text-decoration: underline;
-    text-decoration-thickness: 1.5px;
-}
-
-.visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-}
-
-@keyframes marquee {
-    to { transform: translateX(-100%); }
-}
 
 
 /* ========================================================================
@@ -499,15 +502,19 @@ a {
    ======================================================================== */
 
 @media (prefers-reduced-motion: reduce) {
-    .footer-marquee-content,
     .error-404-letters,
     .error-404-numbers,
-    .error-404-inner {
-        animation: none;
+    .error-404-inner,
+    .floating-box {
+        animation: none !important;
     }
 
     .info-gallery-slide {
         transition: none;
+    }
+
+    .info-carousel-viewport {
+        transition: none !important;
     }
 }
 
@@ -544,19 +551,7 @@ a {
         display: inline;
     }
 
-    .footer-marquee {
-        height: var(--footer-height);
-        min-height: var(--footer-height);
-        padding-top: 0;
-        padding-bottom: 0;
-        max-width: 100vw;
-        contain: strict;
-    }
 
-    .footer-marquee-text {
-        font-size: var(--font-size-sm);
-        line-height: var(--line-height-sm);
-    }
 
     .info-page {
         flex: 0 0 auto;
@@ -584,7 +579,8 @@ a {
     }
 
     .info-carousel-viewport.info-carousel-viewport--ready {
-        height: auto;
+        transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
     }
 
     .info-carousel-viewport.info-carousel-viewport--ready ~ .info-carousel-caption {
@@ -592,7 +588,7 @@ a {
     }
 
     .info-carousel .info-gallery-slide {
-        align-items: flex-end;
+        align-items: flex-start;
     }
 
     .info-carousel .info-gallery-slide img,
@@ -659,12 +655,14 @@ a {
         display: inline;
     }
 
-    /* Mobile hover thinner underlines */
     a:hover,
     .info-body .site-title:hover,
     .intro-text a:hover,
-    .small-text a:hover,
-    .footer-marquee-text a:hover {
+    .small-text a:hover {
+        text-decoration-thickness: 1px;
+    }
+
+    .floating-box:hover {
         text-decoration-thickness: 1px;
     }
 
@@ -761,7 +759,7 @@ body.error-404 {
 
 @media print {
     .top-bar,
-    .footer-marquee,
+    .floating-box,
     .info-carousel {
         display: none !important;
     }

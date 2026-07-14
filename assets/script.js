@@ -9,7 +9,9 @@
     // ========================================================================
 
     const CONFIG = {
-        weatherApiUrl: 'https://api.open-meteo.com/v1/forecast?latitude=41.1171&longitude=16.8719&current_weather=true',
+        weatherApiUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:'
+            ? 'https://api.open-meteo.com/v1/forecast?latitude=41.1171&longitude=16.8719&current_weather=true'
+            : '/api/weather',
         updateIntervals: {
             time: 1000,
             weather: 600000 // 10 minutes
@@ -69,8 +71,9 @@
             'platforms': 'platforms',
             'typeset-in': '🧰 Typeset in',
             'cookies': 'This website doesn\u0026rsquo;t use third party cookies 🍪',
-            'footer-cv': 'full cv and portfolio available upon request',
-            'meme-things-first-title': 'Meme Things First — Design between politics, education and memetics'
+            'footer-cv': 'Full cv and portfolio<br>available upon request',
+            'meme-things-first-title': 'Meme Things First — Design between politics, education and memetics',
+            'cta': 'Open for projects<br>and collaborations'
         },
         it: {
             'about': 'Designer e ricercatore indipendente di base a <a href="https://it.wikipedia.org/wiki/Bari" target="_blank" rel="noopener noreferrer">Bari</a>. La sua pratica esplora la tipografia nella sua forma e struttura, l\u0026rsquo;information design e l\u0026rsquo;editoria e tutte le modalità con le quali queste si interpolano all\u0026rsquo;interno e all\u0026rsquo;esterno dei sistemi visivi. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.',
@@ -93,30 +96,31 @@
             'platforms': 'piattaforme',
             'typeset-in': '🧰 Composto in',
             'cookies': 'Questo sito non utilizza cookie di terze parti 🍪',
-            'footer-cv': 'cv e portfolio completi disponibili su richiesta',
-            'meme-things-first-title': 'Meme Things First — Design tra politica, educazione e memetica'
+            'footer-cv': 'cv e portfolio completi<br>disponibili su richiesta',
+            'meme-things-first-title': 'Meme Things First — Design tra politica, educazione e memetica',
+            'cta': 'Disponibile per progetti<br>e collaborazioni'
         }
     };
 
     const projectMetadata = {
         en: {
             'mimmo-castellano': { extra: '@Iuav', year: '2025' },
-            'singolarita-multiple': { extra: '@Iuav, + Jolanda Baudino, Chiara Lorenzo, Irene Mazzoleni', year: '2024', title: 'Singolarità multiple. Esoeditoria in Italia 1920–1980' },
+            'singolarita-multiple': { extra: '@Iuav, With: Jolanda Baudino, Chiara Lorenzo, Irene Mazzoleni', year: '2024', title: 'Singolarità multiple. Esoeditoria in Italia 1920–1980' },
             'modernizzare-stanca': { extra: '@Spazio Alelaie', year: '2024' },
             '4visions': { extra: '@MAT', year: '2023' },
-            'meme-things-first': { extra: '@Iuav, + Rebecca Bertero, Serena De Mola', year: '2024–2026', title: 'Meme Things First — Design between politics, education and memetics' },
-            'biennale-parola': { extra: '@Iuav, + Giulia Gatta, Tommaso Antonelli', year: '2024' },
+            'meme-things-first': { extra: '@Iuav, With: Rebecca Bertero, Serena De Mola', year: '2024–2026', title: 'Meme Things First — Design between politics, education and memetics' },
+            'biennale-parola': { extra: '@Iuav, With: Giulia Gatta, Tommaso Antonelli', year: '2024' },
             'la-dimora-del-minotauro': { extra: '@Apparati Radicali', year: '2025', title: "The Minotaur's abode" },
             'forma': { extra: '@MAT', year: '2023', title: 'Forma' },
             'ermes': { extra: '@PoliBa', year: '2022', title: 'Ermes' }
         },
         it: {
             'mimmo-castellano': { extra: '@Iuav', year: '2025' },
-            'singolarita-multiple': { extra: '@Iuav, + Jolanda Baudino, Chiara Lorenzo, Irene Mazzoleni', year: '2024', title: 'Singolarità multiple. Esoeditoria in Italia 1920–1980' },
+            'singolarita-multiple': { extra: '@Iuav, Con: Jolanda Baudino, Chiara Lorenzo, Irene Mazzoleni', year: '2024', title: 'Singolarità multiple. Esoeditoria in Italia 1920–1980' },
             'modernizzare-stanca': { extra: '@Spazio Alelaie', year: '2024' },
             '4visions': { extra: '@MAT', year: '2023' },
-            'meme-things-first': { extra: '@Iuav, + Rebecca Bertero, Serena De Mola', year: '2024–2026', title: 'Meme Things First — Design tra politica, educazione e memetica' },
-            'biennale-parola': { extra: '@Iuav, + Giulia Gatta, Tommaso Antonelli', year: '2024' },
+            'meme-things-first': { extra: '@Iuav, Con: Rebecca Bertero, Serena De Mola', year: '2024–2026', title: 'Meme Things First — Design tra politica, educazione e memetica' },
+            'biennale-parola': { extra: '@Iuav, Con: Giulia Gatta, Tommaso Antonelli', year: '2024' },
             'la-dimora-del-minotauro': { extra: '@Apparati Radicali', year: '2025' },
             'forma': { extra: '@MAT', year: '2023', title: 'Forma' },
             'ermes': { extra: '@PoliBa', year: '2022', title: 'Ermes' }
@@ -139,14 +143,16 @@
         return temp.textContent ?? '';
     };
 
-    /** Parses extra string into @ part and collaborators. Format: "@X, + Name1, Name2" */
+    /** Parses extra string into @ part and collaborators. Format: "@X, (Con:|With:|\+) Name1, Name2" */
     const parseExtra = (extra) => {
         if (!extra || typeof extra !== 'string') return { atPart: '', collaborators: '' };
-        const idx = extra.indexOf(', + ');
-        if (idx === -1) return { atPart: extra.trim(), collaborators: '' };
+        // Support splitting on ", + ", ", Con: ", or ", With: "
+        const match = extra.match(/,\s*(?:\+|Con:|With:)\s*/i);
+        if (!match) return { atPart: extra.trim(), collaborators: '' };
+        const idx = match.index;
         return {
             atPart: extra.slice(0, idx).trim(),
-            collaborators: extra.slice(idx + 4).trim()
+            collaborators: extra.slice(idx + match[0].length).trim()
         };
     };
 
@@ -187,19 +193,24 @@
             timezone: cachedTimezone
         };
 
-        let html = `bari, <span class="num">${dateParts.day}</span>.<span class="num">${dateParts.month}</span>.<span class="num">${dateParts.year}</span>, <span class="num">${dateParts.hours}</span>:<span class="num">${dateParts.minutes}</span>:<span class="num">${dateParts.seconds}</span> ${dateParts.timezone}`;
+        let html = `bari, <span class="num">${dateParts.day}</span>.<span class="num">${dateParts.month}</span>.<span class="num">${dateParts.year}</span><br>`;
+        html += `<span class="num">${dateParts.hours}</span>:<span class="num">${dateParts.minutes}</span>:<span class="num">${dateParts.seconds}</span> ${dateParts.timezone}`;
 
         if (state.currentTemperature !== null) {
-            html += `, <span class="num">${state.currentTemperature}</span><span class="grado-basso">°</span>c`;
+            html += ` / <span class="num">${state.currentTemperature}</span><span class="grado-basso">°</span>c`;
         } else {
-            html += `, <span class="num">--</span><span class="grado-basso">°</span>c`;
+            html += ` / <span class="num">--</span><span class="grado-basso">°</span>c`;
         }
         return html;
     }
 
     async function fetchTemperature() {
         try {
-            const response = await fetch(CONFIG.weatherApiUrl);
+            let response = await fetch(CONFIG.weatherApiUrl);
+            if (!response.ok && CONFIG.weatherApiUrl === '/api/weather') {
+                // Fallback to client-side direct API if proxy is not found
+                response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.1171&longitude=16.8719&current_weather=true');
+            }
             if (!response.ok) return;
             const data = await response.json();
             if (data.current_weather?.temperature !== undefined) {
@@ -207,23 +218,31 @@
                 updateFooterDateTimeCached();
             }
         } catch {
-            // Keep UI responsive even if weather endpoint fails temporarily.
+            // Safe fallback if primary fetch fails (e.g. offline or fetch of '/api/weather' fails)
+            try {
+                const fallbackResponse = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.1171&longitude=16.8719&current_weather=true');
+                if (fallbackResponse.ok) {
+                    const data = await fallbackResponse.json();
+                    if (data.current_weather?.temperature !== undefined) {
+                        state.currentTemperature = Math.round(data.current_weather.temperature);
+                        updateFooterDateTimeCached();
+                    }
+                }
+            } catch {
+                // Keep UI responsive even if weather endpoint fails temporarily.
+            }
         }
     }
 
+    let dateTimeElements = null;
     function updateFooterDateTimeCached() {
+        if (!dateTimeElements) {
+            dateTimeElements = document.querySelectorAll('.footer-datetime');
+        }
         const now = new Date();
         const dateTimeString = buildFooterDateTimeHtml(now);
-        document.querySelectorAll('.footer-datetime').forEach((el) => {
+        dateTimeElements.forEach((el) => {
             el.innerHTML = dateTimeString;
-        });
-    }
-
-    function wrapFooterDashes() {
-        document.querySelectorAll('.footer-marquee-text').forEach((el) => {
-            if (!el.innerHTML.includes('<span class="emdash">')) {
-                el.innerHTML = el.innerHTML.replace(/—/g, '<span class="emdash">—</span>');
-            }
         });
     }
 
@@ -257,6 +276,7 @@
 
             updateLanguageSwitcherState();
             if (state.gallery.slides.length > 0) updateProjectMetadata(lang);
+            window.dispatchEvent(new CustomEvent('langchange', { detail: { lang } }));
         } finally {
             state.isChangingLanguage = false;
         }
@@ -480,6 +500,23 @@
             ro.observe(carousel);
         }
         state.gallery.hasInitialized = true;
+
+        // When the first visible image loads, set the initial viewport height
+        const firstSlide = track.children[0];
+        if (firstSlide) {
+            const firstMedia = firstSlide.querySelector('img, video');
+            if (firstMedia) {
+                const setInitialHeight = () => updateViewportHeight(false);
+                if (firstMedia.tagName === 'VIDEO') {
+                    firstMedia.addEventListener('loadedmetadata', setInitialHeight, { once: true });
+                } else if (firstMedia.naturalWidth > 0) {
+                    // Already loaded (cached)
+                    setInitialHeight();
+                } else {
+                    firstMedia.addEventListener('load', setInitialHeight, { once: true });
+                }
+            }
+        }
     }
 
     /** Preload first N carousel images (no videos). Uses WebP when available. */
@@ -506,64 +543,68 @@
         });
     }
 
-    function getMaxAspectRatio() {
-        return new Promise((resolve) => {
-            const slides = state.gallery.slides;
-            if (!slides.length) {
-                resolve(16 / 9);
-                return;
-            }
-            let remaining = slides.length;
-            let maxRatio = 1;
-            const check = (w, h) => {
-                if (w > 0 && h > 0) maxRatio = Math.max(maxRatio, w / h);
-                if (--remaining <= 0) resolve(maxRatio);
-            };
-            slides.forEach(({ src }) => {
-                if (isVideoSource(src)) {
-                    const video = document.createElement('video');
-                    video.preload = 'metadata';
-                    video.onloadedmetadata = () => {
-                        check(video.videoWidth, video.videoHeight);
-                        video.src = '';
-                    };
-                    video.onerror = () => { check(1, 1); };
-                    video.src = src;
-                } else {
-                    const img = new Image();
-                    img.onload = () => check(img.naturalWidth, img.naturalHeight);
-                    img.onerror = () => { check(1, 1); };
-                    img.src = src;
-                }
-            });
-        });
+    /** Returns the natural height of the active slide's media, scaled to fit the viewport width. */
+    function getActiveSlideHeight() {
+        const track = document.getElementById('info-gallery-track');
+        if (!track) return 0;
+        const activeSlide = track.children[state.gallery.currentSlide];
+        if (!activeSlide) return 0;
+        const media = activeSlide.querySelector('img, video');
+        if (!media) return 0;
+
+        const viewport = document.querySelector('.info-carousel-viewport');
+        const viewportWidth = viewport ? viewport.clientWidth : 0;
+        if (viewportWidth <= 0) return 0;
+
+        if (media.tagName === 'VIDEO') {
+            const vw = media.videoWidth || 16;
+            const vh = media.videoHeight || 9;
+            return viewportWidth / (vw / vh);
+        } else {
+            const nw = media.naturalWidth;
+            const nh = media.naturalHeight;
+            if (!nw || !nh) return 0; // Image not loaded yet
+            return viewportWidth / (nw / nh);
+        }
     }
 
-    function setMobileCarouselHeight() {
-        const carousel = document.getElementById('info-carousel');
-        const viewport = carousel?.querySelector('.info-carousel-viewport');
-        if (!carousel || !viewport) return;
+    /**
+     * Sets the viewport height to match the active slide.
+     * When animate=false, the transition is skipped (used for init / resize).
+     */
+    function updateViewportHeight(animate = true) {
         const isMobile = window.matchMedia(`(max-width: ${CONFIG.mobileBreakpoint}px)`).matches;
+        const viewport = document.querySelector('.info-carousel-viewport');
+        if (!viewport) return;
+
         if (!isMobile) {
+            // Desktop: restore default CSS height, remove inline styles
             viewport.style.height = '';
+            viewport.style.transition = '';
             viewport.classList.add('info-carousel-viewport--ready');
             return;
         }
-        const style = getComputedStyle(carousel);
-        const paddingLeft = parseFloat(style.paddingLeft) || 0;
-        const paddingRight = parseFloat(style.paddingRight) || 0;
-        const viewportWidth = carousel.clientWidth - paddingLeft - paddingRight;
-        getMaxAspectRatio().then((maxRatio) => {
-            if (!window.matchMedia(`(max-width: ${CONFIG.mobileBreakpoint}px)`).matches) return;
-            viewport.style.height = (viewportWidth / maxRatio) + 'px';
+
+        const newHeight = getActiveSlideHeight();
+        if (newHeight > 0) {
+            if (!animate) {
+                // Skip transition for initialization and resize
+                viewport.style.transition = 'none';
+                viewport.style.height = newHeight + 'px';
+                // Force reflow then restore transition
+                void viewport.offsetHeight;
+                viewport.style.transition = '';
+            } else {
+                viewport.style.height = newHeight + 'px';
+            }
             viewport.classList.add('info-carousel-viewport--ready');
-        });
+        }
     }
 
     function setInfoCarouselDimensions() {
         const track = document.getElementById('info-gallery-track');
         if (!track || state.gallery.slides.length === 0) return;
-        setMobileCarouselHeight();
+        updateViewportHeight(false);
     }
 
     function goToInfoSlide(index, animate = true) {
@@ -584,6 +625,9 @@
 
         state.gallery.isTransitioning = true;
         state.gallery.currentSlide = index;
+
+        // Update viewport height for the new slide (mobile autoHeight)
+        updateViewportHeight(animate);
 
         const prevSlide = track.children[prevIndex];
         const nextSlide = track.children[index];
@@ -650,7 +694,7 @@
             const parts = [
                 extraPart,
                 slide.year || '',
-                slide.collaborators ? '+ ' + slide.collaborators : ''
+                slide.collaborators ? (state.currentLang === 'it' ? 'Con: ' : 'With: ') + slide.collaborators : ''
             ].filter(Boolean);
             yearEl.innerHTML = parts.join('\u2009/\u2009');
         } else {
@@ -771,6 +815,196 @@
     }
 
     // ========================================================================
+    // BOUNCING BOXES (DVD SCREENSAVER WITH INTER-BOX COLLISION)
+    // ========================================================================
+
+    function initBouncingBoxes() {
+        const els = Array.from(document.querySelectorAll('.floating-box'));
+        if (els.length === 0) return;
+
+        // Respect reduced-motion: show stacked statically at the bottom center
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            els.forEach((el, index) => {
+                el.style.opacity = '1';
+                el.style.position = 'absolute';
+                el.style.bottom = `${20 + index * 50}px`;
+                el.style.left = '50%';
+                el.style.transform = 'translateX(-50%)';
+                el.classList.add('is-bouncing');
+            });
+            return;
+        }
+
+        const baseSpeed = 1.375; // px per frame (~82.5px/s at 60fps, increased by 25%)
+
+        const boxes = els.map(el => {
+            const angle = Math.random() * 2 * Math.PI;
+            let vx = Math.cos(angle) * baseSpeed;
+            let vy = Math.sin(angle) * baseSpeed;
+
+            // Ensure neither axis is too flat
+            const minComponent = baseSpeed * 0.45;
+            if (Math.abs(vx) < minComponent) vx = (vx >= 0 ? 1 : -1) * minComponent;
+            if (Math.abs(vy) < minComponent) vy = (vy >= 0 ? 1 : -1) * minComponent;
+
+            // Normalise velocity to baseSpeed
+            const len = Math.sqrt(vx * vx + vy * vy);
+            vx = (vx / len) * baseSpeed;
+            vy = (vy / len) * baseSpeed;
+
+            return {
+                el,
+                vx,
+                vy,
+                x: 0,
+                y: 0,
+                w: 0,
+                h: 0,
+                initialized: false
+            };
+        });
+
+        let cachedHeaderH = 0;
+        function updateHeaderHeight() {
+            const headerEl = document.querySelector('.top-bar');
+            cachedHeaderH = headerEl ? headerEl.offsetHeight : 0;
+        }
+        updateHeaderHeight();
+        window.addEventListener('resize', updateHeaderHeight);
+
+        function getBounds(boxW, boxH) {
+            return {
+                minX: 0,
+                minY: cachedHeaderH,
+                maxX: window.innerWidth - boxW,
+                maxY: window.innerHeight - boxH
+            };
+        }
+
+        function resolveCollision(b1, b2) {
+            // Calculate overlap on X and Y axes
+            const overlapX = Math.min(b1.x + b1.w, b2.x + b2.w) - Math.max(b1.x, b2.x);
+            const overlapY = Math.min(b1.y + b1.h, b2.y + b2.h) - Math.max(b1.y, b2.y);
+
+            if (overlapX > 0 && overlapY > 0) {
+                // Collision detected!
+                if (overlapX < overlapY) {
+                    // Push apart to prevent sticking
+                    const push = overlapX / 2;
+                    if (b1.x < b2.x) {
+                        b1.x -= push;
+                        b2.x += push;
+                    } else {
+                        b1.x += push;
+                        b2.x -= push;
+                    }
+                    // Reverse/Swap X velocity
+                    const tempVx = b1.vx;
+                    b1.vx = b2.vx;
+                    b2.vx = tempVx;
+                } else {
+                    // Push apart to prevent sticking
+                    const push = overlapY / 2;
+                    if (b1.y < b2.y) {
+                        b1.y -= push;
+                        b2.y += push;
+                    } else {
+                        b1.y += push;
+                        b2.y -= push;
+                    }
+                    // Reverse/Swap Y velocity
+                    const tempVy = b1.vy;
+                    b1.vy = b2.vy;
+                    b2.vy = tempVy;
+                }
+            }
+        }
+
+        function updateBoxDimensions() {
+            boxes.forEach(box => {
+                box.w = box.el.offsetWidth;
+                box.h = box.el.offsetHeight;
+            });
+        }
+
+        window.addEventListener('resize', updateBoxDimensions);
+        window.addEventListener('langchange', updateBoxDimensions);
+
+        function tick() {
+            // Lazy load box dimensions and initialize starting positions
+            boxes.forEach(box => {
+                if (box.w === 0) {
+                    box.w = box.el.offsetWidth;
+                    box.h = box.el.offsetHeight;
+                }
+
+                if (!box.initialized && box.w > 0 && box.h > 0) {
+                    const bounds = getBounds(box.w, box.h);
+                    let placed = false;
+                    let attempts = 0;
+                    while (!placed && attempts < 50) {
+                        box.x = bounds.minX + Math.random() * Math.max(0, bounds.maxX - bounds.minX);
+                        box.y = bounds.minY + Math.random() * Math.max(0, bounds.maxY - bounds.minY);
+
+                        // Check overlap with other initialized boxes
+                        let overlap = false;
+                        for (const other of boxes) {
+                            if (other !== box && other.initialized) {
+                                const overlapX = Math.min(box.x + box.w, other.x + other.w) - Math.max(box.x, other.x);
+                                const overlapY = Math.min(box.y + box.h, other.y + other.h) - Math.max(box.y, other.y);
+                                if (overlapX > 0 && overlapY > 0) {
+                                    overlap = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!overlap) {
+                            placed = true;
+                        }
+                        attempts++;
+                    }
+                    box.el.classList.add('is-bouncing');
+                    box.initialized = true;
+                }
+            });
+
+            // Update positions
+            boxes.forEach(box => {
+                if (!box.initialized) return;
+
+                box.x += box.vx;
+                box.y += box.vy;
+
+                // Wall collision
+                const bounds = getBounds(box.w, box.h);
+                if (box.x <= bounds.minX) { box.x = bounds.minX; box.vx = Math.abs(box.vx); }
+                if (box.x >= bounds.maxX) { box.x = bounds.maxX; box.vx = -Math.abs(box.vx); }
+                if (box.y <= bounds.minY) { box.y = bounds.minY; box.vy = Math.abs(box.vy); }
+                if (box.y >= bounds.maxY) { box.y = bounds.maxY; box.vy = -Math.abs(box.vy); }
+            });
+
+            // Handle box-to-box collisions
+            for (let i = 0; i < boxes.length; i++) {
+                for (let j = i + 1; j < boxes.length; j++) {
+                    if (boxes[i].initialized && boxes[j].initialized) {
+                        resolveCollision(boxes[i], boxes[j]);
+                    }
+                }
+            }
+
+            // Render positions
+            boxes.forEach(box => {
+                if (!box.initialized) return;
+                box.el.style.transform = `translate(${box.x}px, ${box.y}px)`;
+            });
+
+            requestAnimationFrame(tick);
+        }
+
+        requestAnimationFrame(tick);
+    }
+
+    // ========================================================================
     // INITIALIZATION
     // ========================================================================
 
@@ -785,7 +1019,6 @@
         setInterval(updateFooterDateTimeCached, CONFIG.updateIntervals.time);
         fetchTemperature();
         setInterval(fetchTemperature, CONFIG.updateIntervals.weather);
-        wrapFooterDashes();
         initializeLanguage();
 
         bindLanguageLinks();
@@ -793,6 +1026,7 @@
         initLenis();
         initInfoCarousel();
         initVideoObserver();
+        initBouncingBoxes();
         bindGlobalHandlers(scrollWrapper);
     });
 
