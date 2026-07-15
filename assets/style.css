@@ -15,6 +15,7 @@
     --footer-height: calc(3 * var(--font-size-sm));
     --space-sm: 0.625rem;
     --space-carousel: 2.5vw;
+    --color-reactive-rgb: 255, 255, 0;
 }
 
 * {
@@ -438,25 +439,25 @@ a {
     letter-spacing: 0.075em;
     white-space: nowrap;
     cursor: pointer;
-    will-change: transform;
-    transition: background var(--transition-fast), border-color var(--transition-fast);
-    /* Initial state: hidden until JS positions it */
+    will-change: transform, opacity;
+    transition: opacity 0.5s ease-out, background var(--transition-fast), border-color var(--transition-fast);
+    /* Initial state: hidden until JS positions it and weather color is resolved */
     opacity: 0;
 }
 
 /* Opacities from the footer color (#cbfd34 -> rgb(203, 253, 52)) */
 .floating-cta {
-    background: rgba(203, 253, 52, 0.75);
+    background: rgba(var(--color-reactive-rgb), 0.75);
 }
 .floating-cv {
-    background: rgba(203, 253, 52, 0.5);
+    background: rgba(var(--color-reactive-rgb), 0.5);
 }
 .floating-time {
-    background: rgba(203, 253, 52, 0.25);
+    background: rgba(var(--color-reactive-rgb), 0.25);
     cursor: default;
 }
 
-.floating-box.is-bouncing {
+.floating-box.is-bouncing.is-visible {
     opacity: 1;
 }
 
@@ -468,11 +469,11 @@ a {
 }
 .floating-cta:hover,
 .floating-cta:focus-visible {
-    background: rgba(203, 253, 52, 1.0);
+    background: rgba(var(--color-reactive-rgb), 1.0);
 }
 .floating-cv:hover,
 .floating-cv:focus-visible {
-    background: rgba(203, 253, 52, 0.65);
+    background: rgba(var(--color-reactive-rgb), 0.65);
 }
 
 .floating-box:active {
@@ -556,7 +557,7 @@ a {
     .info-page {
         flex: 0 0 auto;
         padding-top: var(--footer-height);
-        padding-bottom: var(--footer-height);
+        padding-bottom: 0;
         padding-left: 0;
         padding-right: 0;
         min-width: 0;
@@ -790,5 +791,57 @@ body.error-404 {
     a {
         text-decoration: none !important;
         color: #000 !important;
+    }
+}
+
+/* ========================================================================
+   CUSTOM EMOJI CURSORS
+   ======================================================================== */
+
+@media (hover: hover) {
+    /* Email links: 📧 */
+    a[href^="mailto:"] {
+        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E📧%3C/text%3E%3C/svg%3E") 9 9, pointer;
+    }
+
+    /* bruno: 🐻 */
+    a[href*="b-r-u-n-o.it"] {
+        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E🐻%3C/text%3E%3C/svg%3E") 9 9, pointer;
+    }
+
+    /* La Scuola Open Source (Sos): 🏴‍☠️ */
+    a[href*="lascuolaopensource.xyz"] {
+        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E🏴‍☠️%3C/text%3E%3C/svg%3E") 9 9, pointer;
+    }
+
+    /* Meme Things First: 🎭 */
+    a[href*="meme-things-first"],
+    .info-gallery-slide[data-project-id="meme-things-first"],
+    #info-project-title[data-active-project="meme-things-first"] {
+        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E🎭%3C/text%3E%3C/svg%3E") 9 9, pointer;
+    }
+
+    /* Iuav: 🛶 */
+    a[href*="iuav.it"],
+    .info-gallery-slide[data-project-id="mimmo-castellano"],
+    .info-gallery-slide[data-project-id="singolarita-multiple"],
+    .info-gallery-slide[data-project-id="biennale-parola"],
+    #info-project-title[data-active-project="mimmo-castellano"],
+    #info-project-title[data-active-project="singolarita-multiple"],
+    #info-project-title[data-active-project="biennale-parola"] {
+        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E🛶%3C/text%3E%3C/svg%3E") 9 9, pointer;
+    }
+
+    /* PoliBa / Bari: 🐓 */
+    a[href*="poliba.it"],
+    a[href*="wikipedia.org/wiki/Bari"],
+    .info-gallery-slide[data-project-id="ermes"],
+    #info-project-title[data-active-project="ermes"] {
+        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E🐓%3C/text%3E%3C/svg%3E") 9 9, pointer;
+    }
+
+    /* Bouncing Time / Temperature box: 🌡️ */
+    .floating-time {
+        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E🌡️%3C/text%3E%3C/svg%3E") 9 9, default;
     }
 }

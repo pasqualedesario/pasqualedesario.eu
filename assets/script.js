@@ -211,11 +211,13 @@
                 // Fallback to client-side direct API if proxy is not found
                 response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.1171&longitude=16.8719&current_weather=true');
             }
-            if (!response.ok) return;
-            const data = await response.json();
-            if (data.current_weather?.temperature !== undefined) {
-                state.currentTemperature = Math.round(data.current_weather.temperature);
-                updateFooterDateTimeCached();
+            if (response.ok) {
+                const data = await response.json();
+                if (data.current_weather?.temperature !== undefined) {
+                    state.currentTemperature = Math.round(data.current_weather.temperature);
+                    updateFooterDateTimeCached();
+                    updateReactiveColor(state.currentTemperature);
+                }
             }
         } catch {
             // Safe fallback if primary fetch fails (e.g. offline or fetch of '/api/weather' fails)
@@ -226,11 +228,14 @@
                     if (data.current_weather?.temperature !== undefined) {
                         state.currentTemperature = Math.round(data.current_weather.temperature);
                         updateFooterDateTimeCached();
+                        updateReactiveColor(state.currentTemperature);
                     }
                 }
             } catch {
                 // Keep UI responsive even if weather endpoint fails temporarily.
             }
+        } finally {
+            showBouncingBoxes();
         }
     }
 
@@ -243,6 +248,62 @@
         const dateTimeString = buildFooterDateTimeHtml(now);
         dateTimeElements.forEach((el) => {
             el.innerHTML = dateTimeString;
+        });
+    }
+
+    function updateReactiveColor(temp) {
+        if (temp === null) return;
+
+        // Custom color scale mapping temperatures in Bari to premium contemporary tones:
+        // <= -5°C: #003e83 (Ice Blue)
+        // 10°C: #008aa1 (Teal)
+        // 20°C: #ffff00 (Yellow)
+        // 30°C: #ffab00 (Amber/Orange)
+        // >= 40°C: #ff7340 (Coral/Red)
+        const keyframes = [
+            { temp: -5, r: 0, g: 62, b: 131 },
+            { temp: 10, r: 0, g: 138, b: 161 },
+            { temp: 20, r: 255, g: 255, b: 0 },
+            { temp: 30, r: 255, g: 171, b: 0 },
+            { temp: 40, r: 255, g: 115, b: 64 }
+        ];
+
+        let r = 255, g = 255, b = 0; // Default fallback to yellow (#ffff00)
+
+        if (temp <= keyframes[0].temp) {
+            r = keyframes[0].r;
+            g = keyframes[0].g;
+            b = keyframes[0].b;
+        } else if (temp >= keyframes[keyframes.length - 1].temp) {
+            const last = keyframes[keyframes.length - 1];
+            r = last.r;
+            g = last.g;
+            b = last.b;
+        } else {
+            // Find keyframe interval and interpolate linearly
+            for (let i = 0; i < keyframes.length - 1; i++) {
+                const k1 = keyframes[i];
+                const k2 = keyframes[i + 1];
+                if (temp >= k1.temp && temp <= k2.temp) {
+                    const t = (temp - k1.temp) / (k2.temp - k1.temp);
+                    r = Math.round(k1.r + t * (k2.r - k1.r));
+                    g = Math.round(k1.g + t * (k2.g - k1.g));
+                    b = Math.round(k1.b + t * (k2.b - k1.b));
+                    break;
+                }
+            }
+        }
+
+        // Set the CSS variable dynamically on document root
+        document.documentElement.style.setProperty('--color-reactive-rgb', `${r}, ${g}, ${b}`);
+    }
+
+    let boxesVisible = false;
+    function showBouncingBoxes() {
+        if (boxesVisible) return;
+        boxesVisible = true;
+        document.querySelectorAll('.floating-box').forEach(el => {
+            el.classList.add('is-visible');
         });
     }
 
@@ -379,9 +440,12 @@
     // INFO CAROUSEL
     // ========================================================================
 
-    function createInfoSlideElement(container, src, title, projectIndex, globalIndex) {
+    function createInfoSlideElement(container, src, title, projectIndex, globalIndex, projectId) {
         const slideEl = document.createElement('div');
         slideEl.className = 'info-gallery-slide';
+        if (projectId) {
+            slideEl.setAttribute('data-project-id', projectId);
+        }
         const isVideo = isVideoSource(src);
 
         if (isVideo) {
@@ -470,7 +534,7 @@
 
             sources.forEach((src, index) => {
                 state.gallery.slides.push({ src, projectId, title, extra: atPart, collaborators, year });
-                createInfoSlideElement(track, src, title, index, globalIndex);
+                createInfoSlideElement(track, src, title, index, globalIndex, projectId);
                 globalIndex++;
             });
         });
@@ -686,6 +750,7 @@
         const yearEl = document.getElementById('info-project-year');
         if (!titleEl || !yearEl) return;
         if (slide) {
+            titleEl.setAttribute('data-active-project', slide.projectId || '');
             titleEl.innerHTML = slide.title || '';
             let extraPart = slide.extra || '';
             if (extraPart.startsWith('@')) {
@@ -698,6 +763,7 @@
             ].filter(Boolean);
             yearEl.innerHTML = parts.join('\u2009/\u2009');
         } else {
+            titleEl.removeAttribute('data-active-project');
             titleEl.innerHTML = '';
             yearEl.innerHTML = '';
         }
@@ -830,7 +896,7 @@
                 el.style.bottom = `${20 + index * 50}px`;
                 el.style.left = '50%';
                 el.style.transform = 'translateX(-50%)';
-                el.classList.add('is-bouncing');
+                el.classList.add('is-bouncing', 'is-visible');
             });
             return;
         }
@@ -1027,6 +1093,10 @@
         initInfoCarousel();
         initVideoObserver();
         initBouncingBoxes();
+
+        // Safety fallback: ensure boxes fade in after 1.2s if weather API is slow/offline
+        setTimeout(showBouncingBoxes, 1200);
+
         bindGlobalHandlers(scrollWrapper);
     });
 
