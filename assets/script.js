@@ -51,7 +51,7 @@
 
     const translations = {
         en: {
-            'about': 'Designer and independent researcher based in <a href="https://en.wikipedia.org/wiki/Bari" target="_blank" rel="noopener noreferrer">Bari</a>, Italy. His practice explores typography in its form and structure, information and editorial design and all the ways they interpolate each other within and without visual systems. His research is oriented also towards design histories, open tools and learning collective ecosystems outside the institutional walls.',
+            'about': 'Designer and independent researcher based in <a href="https://en.wikipedia.org/wiki/Bari" target="_blank" rel="noopener noreferrer">Bari</a>, Italy. His practice explores typography in its form and structure, information and editorial design and all the ways they interpolate each other within and without visual systems. His approach mixes curiosity and control, focusing equally on process and execution. His research is also oriented towards design histories, open tools and learning collective ecosystems outside the institutional walls.',
             'education': 'education',
             'communication-design': 'Communication Design',
             'industrial-design': 'Industrial Design',
@@ -76,7 +76,7 @@
             'cta': 'Open for projects<br>and collaborations'
         },
         it: {
-            'about': 'Designer e ricercatore indipendente di base a <a href="https://it.wikipedia.org/wiki/Bari" target="_blank" rel="noopener noreferrer">Bari</a>. La sua pratica esplora la tipografia nella sua forma e struttura, l\u0026rsquo;information design e l\u0026rsquo;editoria e tutte le modalità con le quali queste si interpolano all\u0026rsquo;interno e all\u0026rsquo;esterno dei sistemi visivi. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.',
+            'about': 'Designer e ricercatore indipendente di base a <a href="https://it.wikipedia.org/wiki/Bari" target="_blank" rel="noopener noreferrer">Bari</a>. La sua pratica esplora la tipografia nella sua forma e struttura, l\u0026rsquo;information design e l\u0026rsquo;editoria e tutte le modalità con le quali questi assi si interpolano all\u0026rsquo;interno e all\u0026rsquo;esterno dei sistemi visivi. Fondendo curiosità e controllo, si concentra egualmente su processo ed esecuzione progettuale. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.',
             'education': 'formazione',
             'communication-design': 'Design della comunicazione',
             'industrial-design': 'Disegno industriale',
