@@ -9,7 +9,7 @@
     --font-size-lg: clamp(0.88rem, 0.88rem + 0.07vw, 0.93rem);
     --line-height-sm: clamp(0.98rem, 0.98rem + 0.09vw, 1.05rem);
     --line-height-md: clamp(1.28rem, 1.28rem + 0.1vw, 1.35rem);
-    --font-regular: 'Ronzino', sans-serif;
+    --font-regular: 'Areal', sans-serif;
     --transition-fast: 0.2s ease;
     --transition-normal: 0.3s ease;
     --footer-height: calc(3 * var(--font-size-sm));
@@ -46,22 +46,24 @@ body {
 }
 
 @font-face {
-    font-family: 'Ronzino';
-    src: local('Ronzino Regular'),
-        local('Ronzino-Regular'),
-        url('fonts/Ronzino-Regular.woff2') format('woff2');
-    font-weight: 400;
+    font-family: 'Areal';
+    src: local('ABC Areal Variable'),
+        local('ABC Areal'),
+        local('Areal'),
+        url('fonts/ABCArealSuperfamilyVariable.woff2') format('woff2');
+    font-weight: 100 900;
     font-style: normal;
     font-display: swap;
 }
 
 @font-face {
-    font-family: 'Ronzino';
-    src: local('Ronzino Oblique'),
-        local('Ronzino-Oblique'),
-        url('fonts/Ronzino-Oblique.woff2') format('woff2');
-    font-weight: 400;
-    font-style: oblique;
+    font-family: 'Areal';
+    src: local('ABC Areal Variable'),
+        local('ABC Areal'),
+        local('Areal'),
+        url('fonts/ABCArealSuperfamilyVariable.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: italic;
     font-display: swap;
 }
 
@@ -233,7 +235,7 @@ a {
 }
 
 .info-project-title {
-    font-style: oblique;
+    font-style: italic;
 }
 
 .info-project-title a {
@@ -496,8 +498,6 @@ a {
     vertical-align: 0.05em;
 }
 
-
-
 /* ========================================================================
    MOBILE RESPONSIVE (≤768px)
    ======================================================================== */
@@ -551,8 +551,6 @@ a {
     .mobile-only {
         display: inline;
     }
-
-
 
     .info-page {
         flex: 0 0 auto;

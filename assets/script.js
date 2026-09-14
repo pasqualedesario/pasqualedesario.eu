@@ -205,38 +205,28 @@
     }
 
     async function fetchTemperature() {
-        try {
-            let response = await fetch(CONFIG.weatherApiUrl);
-            if (!response.ok && CONFIG.weatherApiUrl === '/api/weather') {
-                // Fallback to client-side direct API if proxy is not found
-                response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.1171&longitude=16.8719&current_weather=true');
-            }
-            if (response.ok) {
+        const urls = [
+            CONFIG.weatherApiUrl,
+            'https://api.open-meteo.com/v1/forecast?latitude=41.1171&longitude=16.8719&current_weather=true'
+        ];
+        const uniqueUrls = [...new Set(urls)];
+
+        for (const url of uniqueUrls) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) continue;
                 const data = await response.json();
-                if (data.current_weather?.temperature !== undefined) {
+                if (typeof data.current_weather?.temperature === 'number') {
                     state.currentTemperature = Math.round(data.current_weather.temperature);
                     updateFooterDateTimeCached();
                     updateReactiveColor(state.currentTemperature);
-                }
-            }
-        } catch {
-            // Safe fallback if primary fetch fails (e.g. offline or fetch of '/api/weather' fails)
-            try {
-                const fallbackResponse = await fetch('https://api.open-meteo.com/v1/forecast?latitude=41.1171&longitude=16.8719&current_weather=true');
-                if (fallbackResponse.ok) {
-                    const data = await fallbackResponse.json();
-                    if (data.current_weather?.temperature !== undefined) {
-                        state.currentTemperature = Math.round(data.current_weather.temperature);
-                        updateFooterDateTimeCached();
-                        updateReactiveColor(state.currentTemperature);
-                    }
+                    break;
                 }
             } catch {
-                // Keep UI responsive even if weather endpoint fails temporarily.
+                // Continue to fallback URL if present
             }
-        } finally {
-            showBouncingBoxes();
         }
+        showBouncingBoxes();
     }
 
     let dateTimeElements = null;
@@ -842,14 +832,12 @@
 
         const infoTrack = document.getElementById('info-gallery-track');
         if (infoTrack) {
-            setTimeout(() => {
-                infoTrack.querySelectorAll('video').forEach(v => {
-                    if (!v.dataset.observed) {
-                        observer.observe(v);
-                        v.dataset.observed = 'true';
-                    }
-                });
-            }, 500);
+            infoTrack.querySelectorAll('video').forEach(v => {
+                if (!v.dataset.observed) {
+                    observer.observe(v);
+                    v.dataset.observed = 'true';
+                }
+            });
         }
     }
 
@@ -874,7 +862,8 @@
         });
 
         function raf(time) {
-            state.lenis?.raf(time);
+            if (!state.lenis) return;
+            state.lenis.raf(time);
             requestAnimationFrame(raf);
         }
         requestAnimationFrame(raf);
@@ -996,15 +985,21 @@
         window.addEventListener('resize', updateBoxDimensions);
         window.addEventListener('langchange', updateBoxDimensions);
 
-        function tick() {
-            // Lazy load box dimensions and initialize starting positions
-            boxes.forEach(box => {
+        function initializeUnplacedBoxes() {
+            const uninitialized = boxes.filter(b => !b.initialized);
+            if (uninitialized.length === 0) return;
+
+            // Phase 1: Read all dimensions in batch (no DOM writes)
+            uninitialized.forEach(box => {
                 if (box.w === 0) {
                     box.w = box.el.offsetWidth;
                     box.h = box.el.offsetHeight;
                 }
+            });
 
-                if (!box.initialized && box.w > 0 && box.h > 0) {
+            // Phase 2: Compute initial random placement without layout thrashing
+            uninitialized.forEach(box => {
+                if (box.w > 0 && box.h > 0) {
                     const bounds = getBounds(box.w, box.h);
                     let placed = false;
                     let attempts = 0;
@@ -1012,7 +1007,6 @@
                         box.x = bounds.minX + Math.random() * Math.max(0, bounds.maxX - bounds.minX);
                         box.y = bounds.minY + Math.random() * Math.max(0, bounds.maxY - bounds.minY);
 
-                        // Check overlap with other initialized boxes
                         let overlap = false;
                         for (const other of boxes) {
                             if (other !== box && other.initialized) {
@@ -1024,15 +1018,23 @@
                                 }
                             }
                         }
-                        if (!overlap) {
-                            placed = true;
-                        }
+                        if (!overlap) placed = true;
                         attempts++;
                     }
-                    box.el.classList.add('is-bouncing');
                     box.initialized = true;
                 }
             });
+
+            // Phase 3: Write DOM changes in batch
+            uninitialized.forEach(box => {
+                if (box.initialized) {
+                    box.el.classList.add('is-bouncing');
+                }
+            });
+        }
+
+        function tick() {
+            initializeUnplacedBoxes();
 
             // Update positions
             boxes.forEach(box => {
