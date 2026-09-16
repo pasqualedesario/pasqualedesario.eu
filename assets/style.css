@@ -10,6 +10,7 @@
     --line-height-sm: clamp(0.98rem, 0.98rem + 0.09vw, 1.05rem);
     --line-height-md: clamp(1.28rem, 1.28rem + 0.1vw, 1.35rem);
     --font-regular: 'Areal', sans-serif;
+    --font-features-base: "ss01" 1, "ss02" 1, "ss03" 1, "ss04" 1, "ss05" 1, "ss06" 1, "ss07" 1, "ss09" 1;
     --transition-fast: 0.2s ease;
     --transition-normal: 0.3s ease;
     --footer-height: calc(3 * var(--font-size-sm));
@@ -39,6 +40,7 @@ body {
     overflow-x: hidden;
     overflow-y: hidden;
     font-family: var(--font-regular);
+    font-feature-settings: var(--font-features-base);
     overscroll-behavior: none;
     isolation: isolate;
 }
@@ -67,6 +69,19 @@ body {
 
 a {
     text-decoration: none;
+}
+
+/* Accessibility helper */
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
 }
 
 /* ========================================================================
@@ -129,7 +144,7 @@ a {
 /* Language switcher */
 .lang-switcher {
     display: inline;
-    font-feature-settings: "lnum" 1, "tnum" 1, "case" 1;
+    font-feature-settings: var(--font-features-base), "lnum" 1, "tnum" 1, "case" 1;
 }
 
 .lang-link {
@@ -213,7 +228,7 @@ a {
     font-size: var(--font-size-sm);
     line-height: var(--line-height-sm);
     font-variant-numeric: lining-nums tabular-nums;
-    font-feature-settings: "lnum" 1, "tnum" 1, "case" 1;
+    font-feature-settings: var(--font-features-base), "lnum" 1, "tnum" 1, "case" 1;
     color: var(--color-black);
     flex-shrink: 0;
 }
@@ -253,7 +268,7 @@ a {
 
 /* @ in maiuscolo (case-sensitive/titling) per istituzioni e info progetti */
 .at-majuscule {
-    font-feature-settings: "case" 1;
+    font-feature-settings: var(--font-features-base), "case" 1;
 }
 
 .info-gallery-track {
@@ -390,7 +405,7 @@ a {
 
 .lining-zero {
     font-variant-numeric: lining-nums;
-    font-feature-settings: "lnum" 1, "onum" 0;
+    font-feature-settings: var(--font-features-base), "lnum" 1;
 }
 
 ::selection {
@@ -438,7 +453,7 @@ a {
     text-transform: uppercase;
     letter-spacing: 0.075em;
     font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum" 1;
+    font-feature-settings: var(--font-features-base), "tnum" 1;
     font-variation-settings: "MONO" 50;
     white-space: nowrap;
     cursor: pointer;
@@ -491,7 +506,7 @@ a {
 .floating-time .num {
     letter-spacing: 0;
     font-variant-numeric: lining-nums tabular-nums;
-    font-feature-settings: "lnum" 1, "tnum" 1;
+    font-feature-settings: var(--font-features-base), "lnum" 1, "tnum" 1;
 }
 
 .floating-time .grado-basso {
@@ -680,6 +695,7 @@ body.error-404 {
     padding: var(--footer-height) 0;
     box-sizing: border-box;
     background-color: var(--color-white);
+    overflow: hidden;
 }
 
 .error-404-main {
@@ -710,7 +726,7 @@ body.error-404 {
     font-family: var(--font-regular);
     font-size: 0.2rem;
     font-variant-numeric: lining-nums;
-    font-feature-settings: "lnum" 1, "onum" 0;
+    font-feature-settings: var(--font-features-base), "lnum" 1;
 }
 
 .error-404-inner text {

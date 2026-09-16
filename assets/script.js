@@ -877,6 +877,10 @@
         const els = Array.from(document.querySelectorAll('.floating-box'));
         if (els.length === 0) return;
 
+        if (document.body.classList.contains('error-404')) {
+            showBouncingBoxes();
+        }
+
         // Respect reduced-motion: show stacked statically at the bottom center
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             els.forEach((el, index) => {
