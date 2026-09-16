@@ -197,9 +197,9 @@
         html += `<span class="num">${dateParts.hours}</span>:<span class="num">${dateParts.minutes}</span>:<span class="num">${dateParts.seconds}</span> ${dateParts.timezone}`;
 
         if (state.currentTemperature !== null) {
-            html += ` / <span class="num">${state.currentTemperature}</span><span class="grado-basso">°</span>c`;
+            html += `/<span class="num">${state.currentTemperature}</span><span class="grado-basso">°</span>c`;
         } else {
-            html += ` / <span class="num">--</span><span class="grado-basso">°</span>c`;
+            html += `/<span class="num">--</span><span class="grado-basso">°</span>c`;
         }
         return html;
     }
@@ -731,7 +731,7 @@
         if (!counterEl) return;
         const n = state.gallery.slides.length;
         const current = state.gallery.currentSlide + 1;
-        counterEl.textContent = n ? `(${current}/${n})` : '';
+        counterEl.textContent = n ? `{${current}/${n}}` : '';
     }
 
     function updateInfoCarouselCaption() {

@@ -39,8 +39,6 @@ body {
     overflow-x: hidden;
     overflow-y: hidden;
     font-family: var(--font-regular);
-    font-feature-settings: "onum" 1;
-    font-variant-numeric: oldstyle-nums;
     overscroll-behavior: none;
     isolation: isolate;
 }
@@ -94,9 +92,11 @@ a {
     width: 100%;
 }
 
-/* Shared navigation typography */
+/* Shared navigation typography & section labels (Areal Regular Semi Mono) */
 .info-body .site-title,
 .lang-switcher,
+.platform-label,
+.contact-label,
 .floating-box {
     font-size: var(--font-size-sm);
     line-height: var(--line-height-sm);
@@ -104,6 +104,7 @@ a {
     letter-spacing: 0.075em;
     font-variant-numeric: lining-nums tabular-nums;
     color: var(--color-black);
+    font-variation-settings: "MONO" 50;
 }
 
 .info-body .site-title {
@@ -249,10 +250,6 @@ a {
     text-decoration: underline;
 }
 
-.info-project-year {
-    font-variant-numeric: oldstyle-nums;
-    font-feature-settings: "onum" 1;
-}
 
 /* @ in maiuscolo (case-sensitive/titling) per istituzioni e info progetti */
 .at-majuscule {
@@ -352,6 +349,7 @@ a {
     line-height: var(--line-height-sm);
     text-transform: uppercase;
     letter-spacing: 0.075em;
+    font-variation-settings: "MONO" 50;
 }
 
 .typeset-note {
@@ -439,6 +437,9 @@ a {
     line-height: var(--line-height-sm);
     text-transform: uppercase;
     letter-spacing: 0.075em;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    font-variation-settings: "MONO" 50;
     white-space: nowrap;
     cursor: pointer;
     will-change: transform, opacity;
