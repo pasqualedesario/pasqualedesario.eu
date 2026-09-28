@@ -71,7 +71,7 @@
             'platforms': 'platforms',
             'typeset-in': '🧰 Typeset in',
             'cookies': 'This website doesn\u0026rsquo;t use third party cookies 🍪',
-            'footer-cv': 'Full cv and portfolio<br>available upon request',
+            'footer-cv': 'CV and<br>portfolio<br>available<br>upon request',
             'meme-things-first-title': 'Meme Things First — Design between politics, education and memetics',
             'cta': 'Open for projects<br>and collaborations'
         },
@@ -96,7 +96,7 @@
             'platforms': 'piattaforme',
             'typeset-in': '🧰 Composto in',
             'cookies': 'Questo sito non utilizza cookie di terze parti 🍪',
-            'footer-cv': 'cv e portfolio completi<br>disponibili su richiesta',
+            'footer-cv': 'CV e<br>portfolio<br>completi<br>su richiesta',
             'meme-things-first-title': 'Meme Things First — Design tra politica, educazione e memetica',
             'cta': 'Disponibile per progetti<br>e collaborazioni'
         }
@@ -193,15 +193,11 @@
             timezone: cachedTimezone
         };
 
-        let html = `bari, <span class="num">${dateParts.day}</span>.<span class="num">${dateParts.month}</span>.<span class="num">${dateParts.year}</span><br>`;
-        html += `<span class="num">${dateParts.hours}</span>:<span class="num">${dateParts.minutes}</span>:<span class="num">${dateParts.seconds}</span> ${dateParts.timezone}`;
+        const tempStr = state.currentTemperature !== null
+            ? `<span class="num">${state.currentTemperature}</span><span class="grado-basso">°</span>c`
+            : `<span class="num">--</span><span class="grado-basso">°</span>c`;
 
-        if (state.currentTemperature !== null) {
-            html += `/<span class="num">${state.currentTemperature}</span><span class="grado-basso">°</span>c`;
-        } else {
-            html += `/<span class="num">--</span><span class="grado-basso">°</span>c`;
-        }
-        return html;
+        return `bari<br><span class="num">${dateParts.day}</span>.<span class="num">${dateParts.month}</span>.<span class="num">${dateParts.year}</span><br><span class="num">${dateParts.hours}</span>:<span class="num">${dateParts.minutes}</span>:<span class="num">${dateParts.seconds}</span> ${dateParts.timezone}<br>${tempStr}`;
     }
 
     async function fetchTemperature() {
@@ -284,8 +280,12 @@
             }
         }
 
-        // Set the CSS variable dynamically on document root
+        // Set CSS variables dynamically on document root (base reactive color + complementary color)
+        const compR = 255 - r;
+        const compG = 255 - g;
+        const compB = 255 - b;
         document.documentElement.style.setProperty('--color-reactive-rgb', `${r}, ${g}, ${b}`);
+        document.documentElement.style.setProperty('--color-reactive-comp-rgb', `${compR}, ${compG}, ${compB}`);
     }
 
     let boxesVisible = false;
@@ -911,7 +911,7 @@
             vx = (vx / len) * baseSpeed;
             vy = (vy / len) * baseSpeed;
 
-            return {
+            const boxObj = {
                 el,
                 vx,
                 vy,
@@ -919,8 +919,16 @@
                 y: 0,
                 w: 0,
                 h: 0,
-                initialized: false
+                initialized: false,
+                isHovered: false
             };
+
+            el.addEventListener('mouseenter', () => { boxObj.isHovered = true; });
+            el.addEventListener('mouseleave', () => { boxObj.isHovered = false; });
+            el.addEventListener('focus', () => { boxObj.isHovered = true; });
+            el.addEventListener('blur', () => { boxObj.isHovered = false; });
+
+            return boxObj;
         });
 
         let cachedHeaderH = 0;
@@ -948,33 +956,49 @@
             if (overlapX > 0 && overlapY > 0) {
                 // Collision detected!
                 if (overlapX < overlapY) {
-                    // Push apart to prevent sticking
-                    const push = overlapX / 2;
-                    if (b1.x < b2.x) {
-                        b1.x -= push;
-                        b2.x += push;
+                    if (b1.isHovered && !b2.isHovered) {
+                        b2.x += (b1.x < b2.x) ? overlapX : -overlapX;
+                        b2.vx = -b2.vx;
+                    } else if (!b1.isHovered && b2.isHovered) {
+                        b1.x += (b1.x < b2.x) ? -overlapX : overlapX;
+                        b1.vx = -b1.vx;
                     } else {
-                        b1.x += push;
-                        b2.x -= push;
+                        // Push apart to prevent sticking
+                        const push = overlapX / 2;
+                        if (b1.x < b2.x) {
+                            b1.x -= push;
+                            b2.x += push;
+                        } else {
+                            b1.x += push;
+                            b2.x -= push;
+                        }
+                        // Reverse/Swap X velocity
+                        const tempVx = b1.vx;
+                        b1.vx = b2.vx;
+                        b2.vx = tempVx;
                     }
-                    // Reverse/Swap X velocity
-                    const tempVx = b1.vx;
-                    b1.vx = b2.vx;
-                    b2.vx = tempVx;
                 } else {
-                    // Push apart to prevent sticking
-                    const push = overlapY / 2;
-                    if (b1.y < b2.y) {
-                        b1.y -= push;
-                        b2.y += push;
+                    if (b1.isHovered && !b2.isHovered) {
+                        b2.y += (b1.y < b2.y) ? overlapY : -overlapY;
+                        b2.vy = -b2.vy;
+                    } else if (!b1.isHovered && b2.isHovered) {
+                        b1.y += (b1.y < b2.y) ? -overlapY : overlapY;
+                        b1.vy = -b1.vy;
                     } else {
-                        b1.y += push;
-                        b2.y -= push;
+                        // Push apart to prevent sticking
+                        const push = overlapY / 2;
+                        if (b1.y < b2.y) {
+                            b1.y -= push;
+                            b2.y += push;
+                        } else {
+                            b1.y += push;
+                            b2.y -= push;
+                        }
+                        // Reverse/Swap Y velocity
+                        const tempVy = b1.vy;
+                        b1.vy = b2.vy;
+                        b2.vy = tempVy;
                     }
-                    // Reverse/Swap Y velocity
-                    const tempVy = b1.vy;
-                    b1.vy = b2.vy;
-                    b2.vy = tempVy;
                 }
             }
         }
@@ -1042,7 +1066,7 @@
 
             // Update positions
             boxes.forEach(box => {
-                if (!box.initialized) return;
+                if (!box.initialized || box.isHovered) return;
 
                 box.x += box.vx;
                 box.y += box.vy;

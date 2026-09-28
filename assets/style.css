@@ -17,6 +17,8 @@
     --space-sm: 0.625rem;
     --space-carousel: 2.5vw;
     --color-reactive-rgb: 255, 255, 0;
+    --color-reactive-comp-rgb: 0, 0, 255;
+    --floating-size: clamp(6.8rem, 6.5rem + 1.2vw, 7.5rem);
 }
 
 * {
@@ -124,14 +126,14 @@ a {
 
 .info-body .site-title {
     text-decoration: none;
-    text-underline-offset: 2px;
-    transition: text-decoration var(--transition-normal), text-underline-offset var(--transition-fast), opacity var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
 }
 
 .info-body .site-title:hover,
 .info-body .site-title:focus-visible {
-    text-decoration: underline;
-    text-decoration-thickness: 1.5px;
+    text-decoration: none;
+    background-color: var(--color-gray);
+    color: var(--color-black);
 }
 
 .info-group {
@@ -157,13 +159,14 @@ a {
     vertical-align: baseline;
     line-height: inherit;
     text-decoration: none;
-    transition: text-decoration var(--transition-normal), opacity var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
 }
 
 .lang-link:hover,
 .lang-link:focus-visible {
-    text-decoration: underline;
-    text-decoration-thickness: 1.5px;
+    text-decoration: none;
+    background-color: var(--color-gray);
+    color: var(--color-black);
 }
 
 .desktop-only {
@@ -257,12 +260,14 @@ a {
 .info-project-title a {
     color: var(--color-black);
     text-decoration: none;
-    text-underline-offset: 2px;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .info-project-title a:hover,
 .info-project-title a:focus-visible {
-    text-decoration: underline;
+    text-decoration: none;
+    background-color: var(--color-gray);
+    color: var(--color-black);
 }
 
 
@@ -381,16 +386,16 @@ a {
     display: inline-block;
     text-decoration: none;
     color: var(--color-black);
-    text-underline-offset: 2px;
-    transition: text-decoration var(--transition-normal), text-underline-offset var(--transition-fast), opacity var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
 }
 
 .intro-text a:hover,
 .small-text a:hover,
 .intro-text a:focus-visible,
 .small-text a:focus-visible {
-    text-decoration: underline;
-    text-decoration-thickness: 1.5px;
+    text-decoration: none;
+    background-color: var(--color-gray);
+    color: var(--color-black);
 }
 
 .intro-text a:hover::selection,
@@ -442,7 +447,7 @@ a {
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 0.55em 0.85em;
+    height: var(--floating-size);
     backdrop-filter: blur(18px) saturate(1.4);
     -webkit-backdrop-filter: blur(18px) saturate(1.4);
     text-decoration: none;
@@ -463,35 +468,47 @@ a {
     opacity: 0;
 }
 
-/* Opacities from the footer color (#cbfd34 -> rgb(203, 253, 52)) */
+/* Opacities & Shapes: Cerchio (CTA), Triangolo (CV), Quadrato (TIME) */
 .floating-cta {
     background: rgba(var(--color-reactive-rgb), 0.75);
+    border-radius: 50%;
+    aspect-ratio: 1 / 1;
+    min-height: var(--floating-size);
+    clip-path: none;
+    padding: 1.25em 1.6em;
 }
 .floating-cv {
     background: rgba(var(--color-reactive-rgb), 0.5);
+    width: calc(var(--floating-size) * 1.65);
+    height: var(--floating-size);
+    border-radius: 0;
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    padding: 1.95em 1.1em 0.7em 1.1em;
 }
 .floating-time {
     background: rgba(var(--color-reactive-rgb), 0.25);
     cursor: default;
+    width: var(--floating-size);
+    height: var(--floating-size);
+    border-radius: 0;
+    clip-path: none;
+    padding: 0.5em;
 }
 
 .floating-box.is-bouncing.is-visible {
     opacity: 1;
 }
 
-.floating-box[href]:hover,
-.floating-box[href]:focus-visible {
-    text-decoration: underline;
-    text-decoration-thickness: 1.5px;
-    text-underline-offset: 2px;
+.floating-box:hover,
+.floating-box:focus-visible {
+    background: var(--color-black) !important;
+    color: var(--color-white) !important;
+    text-decoration: none;
 }
-.floating-cta:hover,
-.floating-cta:focus-visible {
-    background: rgba(var(--color-reactive-rgb), 1.0);
-}
-.floating-cv:hover,
-.floating-cv:focus-visible {
-    background: rgba(var(--color-reactive-rgb), 0.65);
+
+.floating-box:hover *,
+.floating-box:focus-visible * {
+    color: var(--color-white) !important;
 }
 
 .floating-box:active {
@@ -554,10 +571,6 @@ a {
     .info-group {
         left: auto;
         right: var(--space-carousel);
-    }
-
-    .lang-link:hover {
-        text-decoration-thickness: 1px;
     }
 
     .desktop-only {
@@ -669,18 +682,6 @@ a {
     .small-text a {
         display: inline;
     }
-
-    a:hover,
-    .info-body .site-title:hover,
-    .intro-text a:hover,
-    .small-text a:hover {
-        text-decoration-thickness: 1px;
-    }
-
-    .floating-box:hover {
-        text-decoration-thickness: 1px;
-    }
-
 }
 
 /* ========================================================================
@@ -806,57 +807,5 @@ body.error-404 {
     a {
         text-decoration: none !important;
         color: #000 !important;
-    }
-}
-
-/* ========================================================================
-   CUSTOM EMOJI CURSORS
-   ======================================================================== */
-
-@media (hover: hover) {
-    /* Email links: 📧 */
-    a[href^="mailto:"] {
-        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E📧%3C/text%3E%3C/svg%3E") 9 9, pointer;
-    }
-
-    /* bruno: 🐻 */
-    a[href*="b-r-u-n-o.it"] {
-        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E🐻%3C/text%3E%3C/svg%3E") 9 9, pointer;
-    }
-
-    /* La Scuola Open Source (Sos): 🏴‍☠️ */
-    a[href*="lascuolaopensource.xyz"] {
-        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E🏴‍☠️%3C/text%3E%3C/svg%3E") 9 9, pointer;
-    }
-
-    /* Meme Things First: 🎭 */
-    a[href*="meme-things-first"],
-    .info-gallery-slide[data-project-id="meme-things-first"],
-    #info-project-title[data-active-project="meme-things-first"] {
-        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E🎭%3C/text%3E%3C/svg%3E") 9 9, pointer;
-    }
-
-    /* Iuav: 🛶 */
-    a[href*="iuav.it"],
-    .info-gallery-slide[data-project-id="mimmo-castellano"],
-    .info-gallery-slide[data-project-id="singolarita-multiple"],
-    .info-gallery-slide[data-project-id="biennale-parola"],
-    #info-project-title[data-active-project="mimmo-castellano"],
-    #info-project-title[data-active-project="singolarita-multiple"],
-    #info-project-title[data-active-project="biennale-parola"] {
-        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E🛶%3C/text%3E%3C/svg%3E") 9 9, pointer;
-    }
-
-    /* PoliBa / Bari: 🐓 */
-    a[href*="poliba.it"],
-    a[href*="wikipedia.org/wiki/Bari"],
-    .info-gallery-slide[data-project-id="ermes"],
-    #info-project-title[data-active-project="ermes"] {
-        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E🐓%3C/text%3E%3C/svg%3E") 9 9, pointer;
-    }
-
-    /* Bouncing Time / Temperature box: 🌡️ */
-    .floating-time {
-        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' style='font-size:18px'%3E%3Ctext y='18'%3E🌡️%3C/text%3E%3C/svg%3E") 9 9, default;
     }
 }
