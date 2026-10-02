@@ -39,7 +39,6 @@ const hasArchiveHash = () => ARCHIVE_HASHES.has(readHash());
 
 const dom = {
   carousel: document.querySelector(".inline-carousel"),
-  hero: document.querySelector(".stack-section--white"),
   introStart: $("intro-text-start"),
   introExpand: $("intro-expand"),
   introSmall: document.querySelectorAll(".intro-text-start-small"),
@@ -93,12 +92,10 @@ const syncAbout = (code = lang) => {
   dom.introSmall?.forEach((el) => {
     el.textContent = mobile ? t.aboutShort : t.aboutFull;
   });
-  if (dom.introExpand) {
-    dom.introExpand.hidden = !mobile;
-    dom.introExpand.textContent = aboutExpanded ? t.aboutCollapse : t.aboutExpand;
-    dom.introExpand.setAttribute("aria-expanded", aboutExpanded ? "true" : "false");
-  }
-  dom.hero?.classList.toggle("is-about-expanded", expanded);
+  if (!dom.introExpand) return;
+  dom.introExpand.hidden = !mobile;
+  dom.introExpand.textContent = aboutExpanded ? t.aboutCollapse : t.aboutExpand;
+  dom.introExpand.setAttribute("aria-expanded", expanded ? "true" : "false");
 };
 
 const liveClock = createColophonClock({

@@ -548,7 +548,18 @@ a:focus-visible i,
     display: block;
   }
 
-  /* One sticky screen: short bio + max gallery height + project footer */
+  /* Stable leading: name on its own line; no text-box trim (avoids expand jump) */
+  .stack-section--white .intro-paragraph {
+    text-box: normal;
+  }
+
+  .stack-section--white .intro-paragraph .brand-name {
+    display: block;
+    width: auto;
+    margin-right: 0;
+  }
+
+  /* One sticky screen: bio (+ expand) + max gallery + project footer */
   .stack-section--white {
     position: sticky;
     height: 100svh;
@@ -570,25 +581,6 @@ a:focus-visible i,
     max-height: none;
   }
 
-  .stack-section--white.is-about-expanded {
-    position: relative;
-    height: auto;
-    max-height: none;
-    min-height: 100svh;
-    overflow: visible;
-  }
-
-  .stack-section--white.is-about-expanded .section-content {
-    flex: none;
-    overflow: visible;
-  }
-
-  .stack-section--white.is-about-expanded .inline-carousel {
-    flex: 0 0 auto;
-    height: min(70svh, 32rem);
-    min-height: 14rem;
-  }
-
   .stack-section--gray {
     height: auto;
     min-height: 100dvh;
@@ -606,25 +598,10 @@ a:focus-visible i,
   }
 
   .gallery-footer-grid {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: baseline;
-    gap: 0;
-  }
-
-  .gallery-col--counter {
     display: block;
-    width: auto;
-    margin-right: 1ch;
   }
 
-  .gallery-col--title {
-    display: block;
-    width: auto;
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-
+  .gallery-col--counter,
   .gallery-col--year,
   .gallery-col--per,
   .gallery-col--con {

@@ -1,5 +1,5 @@
 import { projectCopy, projectFooterPer, projectFooterCon, indexLabels, SLASH } from "./i18n.js";
-import { $, pauseVideos, wrapTnum, rafSchedule, MQ, onMediaChange } from "./utils.js";
+import { $, pauseVideos, wrapTnum, rafSchedule, MQ } from "./utils.js";
 
 /**
  * Infinite horizontal project carousel.
@@ -15,7 +15,6 @@ export function createCarousel(root, { getLang } = {}) {
   const con = $("gallery-con");
   const reduceMotion = matchMedia(MQ.reduceMotion).matches;
   const finePointer = matchMedia(MQ.finePointer).matches;
-  const mobileMq = matchMedia(MQ.mobile);
   const BLUR_MAX = 18;
 
   const state = {
@@ -455,7 +454,6 @@ export function createCarousel(root, { getLang } = {}) {
   handleBlur(true);
 
   window.addEventListener("scroll", onPageScroll, { passive: true });
-  onMediaChange(mobileMq, () => handleBlur(true));
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) pauseVideos(root);
   });

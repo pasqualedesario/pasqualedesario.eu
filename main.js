@@ -801,7 +801,6 @@ function createCarousel(root, { getLang } = {}) {
   const con = $("gallery-con");
   const reduceMotion = matchMedia(MQ.reduceMotion).matches;
   const finePointer = matchMedia(MQ.finePointer).matches;
-  const mobileMq = matchMedia(MQ.mobile);
   const BLUR_MAX = 18;
 
   const state = {
@@ -1241,7 +1240,6 @@ function createCarousel(root, { getLang } = {}) {
   handleBlur(true);
 
   window.addEventListener("scroll", onPageScroll, { passive: true });
-  onMediaChange(mobileMq, () => handleBlur(true));
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) pauseVideos(root);
   });
@@ -2131,7 +2129,6 @@ const hasArchiveHash = () => ARCHIVE_HASHES.has(readHash());
 
 const dom = {
   carousel: document.querySelector(".inline-carousel"),
-  hero: document.querySelector(".stack-section--white"),
   introStart: $("intro-text-start"),
   introExpand: $("intro-expand"),
   introSmall: document.querySelectorAll(".intro-text-start-small"),
@@ -2185,12 +2182,10 @@ const syncAbout = (code = lang) => {
   dom.introSmall?.forEach((el) => {
     el.textContent = mobile ? t.aboutShort : t.aboutFull;
   });
-  if (dom.introExpand) {
-    dom.introExpand.hidden = !mobile;
-    dom.introExpand.textContent = aboutExpanded ? t.aboutCollapse : t.aboutExpand;
-    dom.introExpand.setAttribute("aria-expanded", aboutExpanded ? "true" : "false");
-  }
-  dom.hero?.classList.toggle("is-about-expanded", expanded);
+  if (!dom.introExpand) return;
+  dom.introExpand.hidden = !mobile;
+  dom.introExpand.textContent = aboutExpanded ? t.aboutCollapse : t.aboutExpand;
+  dom.introExpand.setAttribute("aria-expanded", expanded ? "true" : "false");
 };
 
 const liveClock = createColophonClock({
