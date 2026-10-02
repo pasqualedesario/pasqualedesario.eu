@@ -903,6 +903,20 @@ function createCarousel(root, { getLang } = {}) {
     updateFooter(true);
   };
 
+  const scrollToLogical = (logical = state.active) => {
+    cacheGeometry();
+    if (!state.slides.length) return;
+    const idx = Number.isFinite(logical) && logical >= 0 ? logical : 0;
+    const slide =
+      state.slides.find(
+        (s) =>
+          !s.hasAttribute("data-loop-clone") &&
+          Number(s.dataset.originIndex) === idx
+      ) || null;
+    if (slide) setScrollInstant(slide.offsetLeft);
+    else setScrollInstant(state.loopStart || 0);
+  };
+
   const normalizeLoop = () => {
     if (state.jumping || !state.cycle) return;
     const { loopStart, cycle } = state;
@@ -1229,10 +1243,22 @@ function createCarousel(root, { getLang } = {}) {
 
   const onResize = rafSchedule(() => {
     state.rect = null;
-    cacheGeometry();
+    scrollToLogical(Math.max(0, state.active));
     updateFooter(true);
     handleBlur(true);
   });
+
+  /** After outer layout changes (e.g. mobile bio expand), resnap slides. */
+  const relayout = () => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        state.rect = null;
+        scrollToLogical(Math.max(0, state.active));
+        updateFooter(true);
+        handleBlur(true);
+      });
+    });
+  };
 
   shuffle();
   initVideos();
@@ -1266,7 +1292,7 @@ function createCarousel(root, { getLang } = {}) {
     window.addEventListener("resize", onResize, { passive: true });
   }
 
-  return { updateFooter };
+  return { updateFooter, relayout };
 }
 
 /* === query-surface.js === */
@@ -2182,10 +2208,12 @@ const syncAbout = (code = lang) => {
   dom.introSmall?.forEach((el) => {
     el.textContent = mobile ? t.aboutShort : t.aboutFull;
   });
-  if (!dom.introExpand) return;
-  dom.introExpand.hidden = !mobile;
-  dom.introExpand.textContent = aboutExpanded ? t.aboutCollapse : t.aboutExpand;
-  dom.introExpand.setAttribute("aria-expanded", expanded ? "true" : "false");
+  if (dom.introExpand) {
+    dom.introExpand.hidden = !mobile;
+    dom.introExpand.textContent = aboutExpanded ? t.aboutCollapse : t.aboutExpand;
+    dom.introExpand.setAttribute("aria-expanded", expanded ? "true" : "false");
+  }
+  if (mobile) carousel?.relayout?.();
 };
 
 const liveClock = createColophonClock({

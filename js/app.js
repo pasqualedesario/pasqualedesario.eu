@@ -92,10 +92,12 @@ const syncAbout = (code = lang) => {
   dom.introSmall?.forEach((el) => {
     el.textContent = mobile ? t.aboutShort : t.aboutFull;
   });
-  if (!dom.introExpand) return;
-  dom.introExpand.hidden = !mobile;
-  dom.introExpand.textContent = aboutExpanded ? t.aboutCollapse : t.aboutExpand;
-  dom.introExpand.setAttribute("aria-expanded", expanded ? "true" : "false");
+  if (dom.introExpand) {
+    dom.introExpand.hidden = !mobile;
+    dom.introExpand.textContent = aboutExpanded ? t.aboutCollapse : t.aboutExpand;
+    dom.introExpand.setAttribute("aria-expanded", expanded ? "true" : "false");
+  }
+  if (mobile) carousel?.relayout?.();
 };
 
 const liveClock = createColophonClock({
