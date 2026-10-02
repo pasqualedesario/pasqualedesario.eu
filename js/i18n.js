@@ -288,7 +288,7 @@ export const TRANSLATIONS = Object.freeze({
     skipLink: "Vai al contenuto",
     metaDescription:
       "Pasquale de Sario, designer e art director di base in Puglia. Tipografia, editoria, information e web design.",
-    documentTitle: "Pasquale de Sario — Designer & Art Director",
+    documentTitle: "Pasquale de Sario",
     ogLocale: "it_IT",
     indexLabels: {
       title: "Archivio",
@@ -324,7 +324,7 @@ export const TRANSLATIONS = Object.freeze({
     skipLink: "Skip to content",
     metaDescription:
       "Pasquale de Sario, designer and art director based in Puglia, Italy. Typography, publishing, information and web design.",
-    documentTitle: "Pasquale de Sario — Designer & Art Director",
+    documentTitle: "Pasquale de Sario",
     ogLocale: "en_US",
     indexLabels: {
       title: "Archive",
