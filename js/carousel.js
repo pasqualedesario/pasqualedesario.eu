@@ -1,5 +1,5 @@
 import { projectCopy, projectFooterPer, projectFooterCon, indexLabels, SLASH } from "./i18n.js";
-import { $, pauseVideos, wrapTnum, rafSchedule, MQ } from "./utils.js";
+import { $, pauseVideos, wrapTnum, rafSchedule, MQ, onMediaChange } from "./utils.js";
 
 /**
  * Infinite horizontal project carousel.
@@ -15,6 +15,7 @@ export function createCarousel(root, { getLang } = {}) {
   const con = $("gallery-con");
   const reduceMotion = matchMedia(MQ.reduceMotion).matches;
   const finePointer = matchMedia(MQ.finePointer).matches;
+  const mobileMq = matchMedia(MQ.mobile);
   const BLUR_MAX = 18;
 
   const state = {
@@ -407,6 +408,20 @@ export function createCarousel(root, { getLang } = {}) {
   };
 
   const handleBlur = (force = false) => {
+    // Mobile hero is fluid (bio + 100svh gallery) — cover only after the whole section.
+    if (mobileMq.matches) {
+      const hero = root.closest(".stack-section--white");
+      const past = hero
+        ? window.scrollY >= hero.offsetTop + hero.offsetHeight - 8
+        : false;
+      setCovered(past);
+      if (state.lastBlur !== 0) {
+        root.style.filter = "";
+        state.lastBlur = 0;
+      }
+      return;
+    }
+
     const y = window.scrollY;
     const vh = window.innerHeight || 1;
 
@@ -454,6 +469,7 @@ export function createCarousel(root, { getLang } = {}) {
   handleBlur(true);
 
   window.addEventListener("scroll", onPageScroll, { passive: true });
+  onMediaChange(mobileMq, () => handleBlur(true));
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) pauseVideos(root);
   });

@@ -418,7 +418,7 @@ const TRANSLATIONS = Object.freeze({
       supervision: "Supervisione"
     },
     aboutShort:
-      "Designer e art director di base in Puglia. Tipografia, editoria, information design e web design e development, storie del design, strumenti aperti ed ecosistemi collettivi di apprendimento.",
+      "Designer e art director di base in Puglia. Tipografia, editoria, information design, web design e development, storie del design, strumenti aperti ed ecosistemi collettivi di apprendimento.",
     aboutFull:
       "Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.",
     aboutExpand: "Espandi",
@@ -801,6 +801,7 @@ function createCarousel(root, { getLang } = {}) {
   const con = $("gallery-con");
   const reduceMotion = matchMedia(MQ.reduceMotion).matches;
   const finePointer = matchMedia(MQ.finePointer).matches;
+  const mobileMq = matchMedia(MQ.mobile);
   const BLUR_MAX = 18;
 
   const state = {
@@ -1193,6 +1194,20 @@ function createCarousel(root, { getLang } = {}) {
   };
 
   const handleBlur = (force = false) => {
+    // Mobile hero is fluid (bio + 100svh gallery) — cover only after the whole section.
+    if (mobileMq.matches) {
+      const hero = root.closest(".stack-section--white");
+      const past = hero
+        ? window.scrollY >= hero.offsetTop + hero.offsetHeight - 8
+        : false;
+      setCovered(past);
+      if (state.lastBlur !== 0) {
+        root.style.filter = "";
+        state.lastBlur = 0;
+      }
+      return;
+    }
+
     const y = window.scrollY;
     const vh = window.innerHeight || 1;
 
@@ -1240,6 +1255,7 @@ function createCarousel(root, { getLang } = {}) {
   handleBlur(true);
 
   window.addEventListener("scroll", onPageScroll, { passive: true });
+  onMediaChange(mobileMq, () => handleBlur(true));
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) pauseVideos(root);
   });

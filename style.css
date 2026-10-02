@@ -548,20 +548,29 @@ a:focus-visible i,
     display: block;
   }
 
-  .stack-section--white.is-about-expanded {
+  /* Fluid hero: bio stacks above a full-viewport-tall gallery */
+  .stack-section--white {
+    position: relative;
     height: auto;
-    min-height: 100dvh;
+    min-height: 100svh;
     overflow: visible;
   }
 
-  .stack-section--white.is-about-expanded .section-content {
+  .stack-section--white .section-content {
     flex: none;
+    overflow: visible;
   }
 
-  .stack-section--white.is-about-expanded .inline-carousel {
+  .stack-section--white .inline-carousel {
     flex: 0 0 auto;
-    height: min(58svh, 36rem);
-    min-height: 16rem;
+    /* Full small-viewport height so media reads complete (Safari/Chrome chrome-safe) */
+    height: 100svh;
+    max-height: none;
+    min-height: 18rem;
+  }
+
+  .stack-section--white.is-about-expanded {
+    overflow: visible;
   }
 
   .stack-section--gray {
