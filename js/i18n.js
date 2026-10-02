@@ -28,6 +28,9 @@ const HREF = Object.freeze({
 });
 
 const em = (html) => `<em>${html}</em>`;
+
+/** Recurring supervision credit for bruno studio. */
+const BRUNO_SUP = `${ext(HREF.bruno, "bruno")} (Andrea Codolo &amp; Giacomo Covacich)`;
 const linked = (href, html) => ext(href, em(html));
 
 const MTF = Object.freeze({
@@ -97,7 +100,7 @@ const SHARED = Object.freeze({
   serviziIt: serviziList("it")
 });
 
-/** Project catalog for a locale (`con` | `with`). Fields: year, title, per, con, tags. */
+/** Project catalog for a locale (`con` | `with`). Fields: year, title, per, con, sup, tags. */
 function projects(collab) {
   const it = collab === "con";
 
@@ -114,6 +117,7 @@ function projects(collab) {
       title: em("Molecular Blackletter"),
       per: `SOS, ${ext(HREF.mtd, "Molecular Type Design")}`,
       con: "",
+      sup: "Alberto Guerra, Puria Nafisi, Alessandro Tartaglia",
       tags: ["typeDesign"]
     },
     mr: {
@@ -121,6 +125,7 @@ function projects(collab) {
       title: em("Morning Rituals 2025"),
       per: ext(HREF.bruno, "bruno"),
       con: "",
+      sup: BRUNO_SUP,
       tags: ["graphicDesign", "photography"]
     },
     mc: {
@@ -128,6 +133,7 @@ function projects(collab) {
       title: em("Mimmo Castellano: furor graphicus"),
       per: "Iuav",
       con: "",
+      sup: "Monica Pastore, Fiorella Bulegato",
       tags: ["publishing", "research"]
     },
     sm: {
@@ -135,6 +141,7 @@ function projects(collab) {
       title: em(`Singolarità multiple. Esoeditoria in Italia 1920\u20131980`),
       per: "Iuav",
       con: "Jolanda Baudino, Chiara Lorenzo, Irene Mazzoleni",
+      sup: "Fiorella Bulegato, Valentina Nitti",
       tags: ["publishing", "research"]
     },
     alelaie: {
@@ -163,6 +170,7 @@ function projects(collab) {
       title: em("Biennale Parola"),
       per: "Iuav",
       con: "Giulia Gatta, Tommaso Antonelli",
+      sup: "Luciano Perondi, Bruno Calza",
       tags: ["publishing", "informationDesign"]
     },
     ar: {
@@ -170,6 +178,7 @@ function projects(collab) {
       title: linked(HREF.ar, it ? "La dimora del Minotauro" : "The Minotaur’s abode"),
       per: "Apparati Radicali",
       con: "",
+      sup: `Noemi Biasetton, ${BRUNO_SUP}`,
       tags: ["publishing", "artwork"]
     },
     forma: {
@@ -184,6 +193,7 @@ function projects(collab) {
       title: em("Ermes"),
       per: "PoliBa",
       con: "",
+      sup: "Michele Colonna, Enzo Ruta",
       tags: ["typeDesign"]
     },
     ic: {
@@ -191,6 +201,7 @@ function projects(collab) {
       title: em("L'incendio della casa abominevole"),
       per: "PoliBa",
       con: "Marcella Carlucci, Erasmo Giove",
+      sup: "Nino Perrone, Vito Battista",
       tags: ["informationDesign", "publishing"]
     },
     serenissima: {
@@ -198,6 +209,7 @@ function projects(collab) {
       title: em("Serenissima"),
       per: "Iuav",
       con: "Andrea Pintauro",
+      sup: "Nicola Di Croce",
       tags: ["publishing", "photography", "soundDesign"]
     },
     em: {
@@ -219,6 +231,7 @@ function projects(collab) {
       title: em("Il magazzino dei destini incrociati"),
       per: "Iuav",
       con: "Tommaso Antonelli, Alessio Costantini, Andrea Pintauro",
+      sup: "Gianni Sinni, Irene Sgarro",
       tags: ["informationDesign", "publishing"]
     },
     chiomarosa: {
@@ -226,6 +239,7 @@ function projects(collab) {
       title: em("Chiomarosa"),
       per: ext(HREF.bruno, "bruno"),
       con: "",
+      sup: BRUNO_SUP,
       tags: ["graphicDesign", "photography"]
     },
     supernico: {
@@ -276,10 +290,15 @@ export const TRANSLATIONS = Object.freeze({
     ogLocale: "it_IT",
     indexLabels: {
       title: "Archivio",
-      collab: "Con"
+      collab: "Con",
+      supervision: "Supervisione"
     },
-    aboutText:
+    aboutShort:
+      "Designer e art director di base in Puglia. Tipografia, editoria, information design e web design e development, storie del design, strumenti aperti ed ecosistemi collettivi di apprendimento.",
+    aboutFull:
       "Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.",
+    aboutExpand: "Espandi",
+    aboutCollapse: "Comprimi",
     projects: projects("con"),
     curtain: {
       serviziLabel: "Servizi",
@@ -306,10 +325,15 @@ export const TRANSLATIONS = Object.freeze({
     ogLocale: "en_US",
     indexLabels: {
       title: "Archive",
-      collab: "With"
+      collab: "With",
+      supervision: "Supervision"
     },
-    aboutText:
+    aboutShort:
+      "Designer and art director based in Puglia, Italy. Typography, publishing, information design and web design and development, design histories, open tools and collective learning ecosystems.",
+    aboutFull:
       "Designer and art director based in Puglia, Italy. His practice explores typography, publishing, information and web design and all the ways they interpolate each other within and without visual systems. His approach mixes curiosity and control, focusing equally on process and execution for the development of visual identities and digital spaces for brands, institutions and private clients. His research is also oriented towards design histories, open tools and learning collective ecosystems outside the institutional walls.",
+    aboutExpand: "Expand",
+    aboutCollapse: "Compress",
     projects: projects("with"),
     curtain: {
       serviziLabel: "Services",
@@ -389,11 +413,6 @@ export function applyLanguage(dom, lang, onApplied) {
   configureLangButton(dom.langBtnSecondary, t.langSecondary);
   if (dom.skipLink) dom.skipLink.textContent = t.skipLink;
 
-  if (dom.introStart) dom.introStart.textContent = t.aboutText;
-  dom.introSmall?.forEach((el) => {
-    el.textContent = t.aboutText;
-  });
-
   const { labels: L, values: V } = dom;
   const C = t.curtain;
 
@@ -413,7 +432,8 @@ export function projectCopy(lang, projectId) {
 
 /**
  * Carousel footer credits from structured `per` / `con`.
- * Multi-line values use the first line only (archive shows the rest).
+ * Multi-line `per` values use the first line only (archive shows the rest).
+ * Home carousel shows collaborators only; archive also renders `sup`.
  */
 const firstCreditLine = (html) =>
   String(html || "")
@@ -458,6 +478,7 @@ export function projectIndex(lang) {
     const title = stripHtml(project.title);
     const per = stripHtml(project.per);
     const con = stripHtml(project.con);
+    const sup = stripHtml(project.sup);
     const year = stripHtml(project.year);
     const tagsSearch = stripHtml(tagSearchText(project.tags));
     return {
@@ -465,7 +486,7 @@ export function projectIndex(lang) {
       title,
       year,
       yearKey: yearSortKey(year),
-      search: `${title} ${year} ${per} ${con} ${tagsSearch}`.toLowerCase()
+      search: `${title} ${year} ${per} ${con} ${sup} ${tagsSearch}`.toLowerCase()
     };
   });
 

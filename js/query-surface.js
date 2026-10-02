@@ -119,11 +119,16 @@ export const resolveQueryInput = ({ key, value, range, canOpen }) => {
   return next == null ? null : { next };
 };
 
-/** Assign Agip or Fiat for this session and warm that face. */
+/** Assign Agip or Fiat for this session; warm the face after first paint. */
 export const bindQueryFace = (...els) => {
   const { className, family } = pickQueryFace();
   for (const el of els) el?.classList.add(className);
-  document.fonts?.load?.(`400 80px ${family}`).catch(() => {});
+  const warm = () => document.fonts?.load?.(`400 80px ${family}`).catch(() => {});
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(warm, { timeout: 2000 });
+  } else {
+    window.setTimeout(warm, 1);
+  }
 };
 
 export const setQueryTyping = (on, html = document.documentElement) => {

@@ -289,6 +289,7 @@ video {
 .brand-name,
 .section-label-small,
 .lang-btn,
+.intro-expand,
 .intro-paragraph-small,
 .intro-text-start-small,
 .index-title,
@@ -329,9 +330,29 @@ video {
   text-wrap: pretty;
 }
 
-/* Trim trailing line-box air so only carousel margin-top (= --gap) remains */
+/* Trim trailing line-box air so only expand / carousel gap remains */
 .stack-section--white .intro-paragraph {
   text-box: trim-end cap alphabetic;
+}
+
+.intro-expand {
+  display: none;
+  width: max-content;
+  max-width: 100%;
+  margin: var(--gap) 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.intro-expand:focus {
+  outline: none;
+}
+
+.intro-expand:focus-visible {
+  color: var(--color-jasper);
 }
 
 .intro-paragraph-small,
@@ -523,24 +544,24 @@ a:focus-visible i,
 }
 
 @media (max-width: 999px) {
-  /* Fluid first curtain — Safari chrome + long bio no longer clip the gallery */
-  .stack-section--white {
-    position: relative;
+  .intro-expand {
+    display: block;
+  }
+
+  .stack-section--white.is-about-expanded {
     height: auto;
-    min-height: 100svh;
+    min-height: 100dvh;
     overflow: visible;
   }
 
-  .stack-section--white .section-content {
+  .stack-section--white.is-about-expanded .section-content {
     flex: none;
-    overflow: visible;
   }
 
-  .stack-section--white .inline-carousel {
+  .stack-section--white.is-about-expanded .inline-carousel {
     flex: 0 0 auto;
-    height: 58svh;
+    height: min(58svh, 36rem);
     min-height: 16rem;
-    max-height: 36rem;
   }
 
   .stack-section--gray {
@@ -789,6 +810,7 @@ html.is-query-typing .query-text {
   transition: transform 0.7s var(--ease-out);
   pointer-events: none;
   contain: layout style paint;
+  content-visibility: hidden;
   display: flex;
   flex-direction: column;
   --index-list-gap: 2px;
@@ -797,6 +819,7 @@ html.is-query-typing .query-text {
 }
 
 html.is-index-open .index-curtain {
+  content-visibility: visible;
   transform: translate3d(0, 0, 0);
   pointer-events: auto;
 }
@@ -991,8 +1014,8 @@ html.is-index-open .site-gate {
   display: block;
   flex: 0 0 auto;
   width: max-content;
-  max-width: calc(100% + 0.5em);
-  box-sizing: content-box;
+  max-width: 100%;
+  box-sizing: border-box;
   margin: 0 -0.25em;
   padding: 0 0.25em;
   border: 0;
@@ -1006,7 +1029,9 @@ html.is-index-open .site-gate {
   font-weight: var(--font-weight);
   font-feature-settings: var(--font-features-case);
   font-style: italic;
-  white-space: nowrap;
+  white-space: normal;
+  text-wrap: pretty;
+  overflow-wrap: break-word;
   overflow: visible;
 }
 

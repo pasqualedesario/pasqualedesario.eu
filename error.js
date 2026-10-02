@@ -7,6 +7,12 @@
 
 const $ = (id) => document.getElementById(id);
 
+const MQ = Object.freeze({
+  mobile: "(max-width: 999px)",
+  reduceMotion: "(prefers-reduced-motion: reduce)",
+  finePointer: "(hover: hover) and (pointer: fine)"
+});
+
 /** Classic scrollbar width (0 with overlay scrollbars). */
 const scrollbarWidth = () => {
   const outer = document.createElement("div");
@@ -34,6 +40,12 @@ const rafSchedule = (fn) => {
       fn();
     });
   };
+};
+
+/** Subscribe to a MediaQueryList change (Safari < 14 fallback). */
+const onMediaChange = (mq, fn) => {
+  if (typeof mq.addEventListener === "function") mq.addEventListener("change", fn);
+  else mq.addListener?.(fn);
 };
 
 /** Resolve element ids (or nodes) to a live element list. */
@@ -225,12 +237,19 @@ async function fetchTerlizziWeather(targets) {
     /* private mode */
   }
 
-  const ctrl = new AbortController();
-  const timeout = window.setTimeout(() => ctrl.abort(), 6000);
+  let signal;
+  let timeout = 0;
+  if (typeof AbortSignal.timeout === "function") {
+    signal = AbortSignal.timeout(6000);
+  } else {
+    const ctrl = new AbortController();
+    signal = ctrl.signal;
+    timeout = window.setTimeout(() => ctrl.abort(), 6000);
+  }
 
   try {
     const res = await fetch(WEATHER_URL, {
-      signal: ctrl.signal,
+      signal,
       headers: { Accept: "application/json" }
     });
     if (!res.ok) return;
@@ -248,7 +267,7 @@ async function fetchTerlizziWeather(targets) {
   } catch {
     /* keep HTML fallback */
   } finally {
-    clearTimeout(timeout);
+    if (timeout) clearTimeout(timeout);
   }
 }
 
@@ -331,7 +350,12 @@ const bindFace = () => {
   if (!code) return;
   const face = FACES[(Math.random() * FACES.length) | 0];
   code.classList.add(face.className);
-  document.fonts?.load?.(`400 80px ${face.family}`).catch(() => {});
+  const warm = () => document.fonts?.load?.(`400 80px ${face.family}`).catch(() => {});
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(warm, { timeout: 2000 });
+  } else {
+    window.setTimeout(warm, 1);
+  }
 };
 
 const clock = createColophonClock({

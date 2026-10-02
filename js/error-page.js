@@ -78,7 +78,12 @@ const bindFace = () => {
   if (!code) return;
   const face = FACES[(Math.random() * FACES.length) | 0];
   code.classList.add(face.className);
-  document.fonts?.load?.(`400 80px ${face.family}`).catch(() => {});
+  const warm = () => document.fonts?.load?.(`400 80px ${face.family}`).catch(() => {});
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(warm, { timeout: 2000 });
+  } else {
+    window.setTimeout(warm, 1);
+  }
 };
 
 const clock = createColophonClock({

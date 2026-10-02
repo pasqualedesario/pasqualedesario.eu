@@ -6,7 +6,7 @@ import {
   stripHtml,
   configureLangButton
 } from "./i18n.js";
-import { $, pauseVideos, bindLangButtons, scrollToTop, escapeHtml, wrapTnum, setScrollbarComp, rafSchedule } from "./utils.js";
+import { $, pauseVideos, bindLangButtons, scrollToTop, escapeHtml, wrapTnum, setScrollbarComp, rafSchedule, MQ, onMediaChange } from "./utils.js";
 import {
   normalizeQuery,
   paintQuerySurface,
@@ -17,7 +17,6 @@ import {
   setQueryTyping
 } from "./query-surface.js";
 
-const MOBILE_MQ = "(max-width: 999px)";
 const CLOSE_IGNORE = "a, button, .index-result, .index-preview__media";
 const MEDIA_SELECTOR =
   ".inline-carousel .carousel-slide:not([data-loop-clone]), #archive-media-bank .archive-media";
@@ -35,23 +34,26 @@ const mediaSrc = (el) => {
 
 const collectProjectMedia = () => {
   const map = new Map();
+  const seen = new Map();
 
   for (const slide of document.querySelectorAll(MEDIA_SELECTOR)) {
     const id = slide.dataset.project;
     if (!id) continue;
 
     let list = map.get(id);
+    let srcs = seen.get(id);
     if (!list) {
       list = [];
+      srcs = new Set();
       map.set(id, list);
+      seen.set(id, srcs);
     }
-
-    const hasSrc = (src) => list.some((item) => item.src === src);
 
     const img = slide.querySelector("img");
     if (img) {
       const src = mediaSrc(img);
-      if (src && !hasSrc(src)) {
+      if (src && !srcs.has(src)) {
+        srcs.add(src);
         list.push({ type: "img", src, alt: img.getAttribute("alt") || "" });
       }
       continue;
@@ -60,7 +62,8 @@ const collectProjectMedia = () => {
     const video = slide.querySelector("video");
     if (!video) continue;
     const src = mediaSrc(video.querySelector("source")) || mediaSrc(video);
-    if (!src || hasSrc(src)) continue;
+    if (!src || srcs.has(src)) continue;
+    srcs.add(src);
     list.push({
       type: "video",
       src,
@@ -71,9 +74,9 @@ const collectProjectMedia = () => {
   return map;
 };
 
-/** Year en-dashes bare; em dashes → thin + .dash (case 0). */
+/** Year en-dashes bare; em dashes → thin + .dash (case 0). Keep last two words together. */
 const withDashSpans = (s) =>
-  escapeHtml(s)
+  escapeHtml(String(s || "").replace(/\s+(\S+)\s*$/u, "\u00A0$1"))
     .replace(/(\d)[\u2009\u200A\s]*[\u2013\-][\u2009\u200A\s]*(\d)/g, `$1\u2013$2`)
     .replace(
       /[\u2009\u200A\s]*\u2014[\u2009\u200A\s]*/g,
@@ -98,6 +101,7 @@ export function createIndexPanel({
   const metaTags = $("index-meta-tags");
   const metaPer = $("index-meta-per");
   const metaCon = $("index-meta-con");
+  const metaSup = $("index-meta-sup");
   const gateQuery = $("site-gate-query");
   const siteGate = gateQuery?.closest(".site-gate") || $("site-gate");
   if (!curtain || !results || !queryEl) return null;
@@ -111,9 +115,9 @@ export function createIndexPanel({
     langSecondary: $("index-lang-btn-secondary")
   };
 
-  const mobileMq = window.matchMedia(MOBILE_MQ);
+  const mobileMq = window.matchMedia(MQ.mobile);
   const html = document.documentElement;
-  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduceMotion = matchMedia(MQ.reduceMotion).matches;
 
   const state = {
     open: false,
@@ -175,6 +179,7 @@ export function createIndexPanel({
     if (metaTags) metaTags.innerHTML = "";
     if (metaPer) metaPer.innerHTML = "";
     if (metaCon) metaCon.textContent = "";
+    if (metaSup) metaSup.innerHTML = "";
   };
 
   const clearSelection = () => {
@@ -295,7 +300,10 @@ export function createIndexPanel({
     const tagsHtml = projectTagsHtml(project.tags, lang());
     const perHtml = String(project.per || "").trim();
     const con = stripHtml(project.con);
-    const collab = indexLabels(lang())?.collab || "Con";
+    const supHtml = String(project.sup || "").trim();
+    const labels = indexLabels(lang()) || {};
+    const collab = labels.collab || "Con";
+    const supervision = labels.supervision || "Supervisione";
 
     if (metaYear) metaYear.innerHTML = wrapTnum(year);
     if (metaTags) metaTags.innerHTML = tagsHtml;
@@ -308,8 +316,11 @@ export function createIndexPanel({
         : "";
     }
     if (metaCon) metaCon.textContent = con ? `${collab}: ${con}` : "";
+    if (metaSup) {
+      metaSup.innerHTML = supHtml ? `${supervision}: ${supHtml}` : "";
+    }
 
-    metaRoot.hidden = !(year || tagsHtml || perHtml || con);
+    metaRoot.hidden = !(year || tagsHtml || perHtml || con || supHtml);
   };
 
   const setHover = (projectId) => {
@@ -468,21 +479,28 @@ export function createIndexPanel({
     curtain.setAttribute("aria-label", labels.title);
   };
 
+  const clearResults = () => {
+    results.replaceChildren();
+    state.resultNodes = [];
+    state.resultById = new Map();
+    state.activeEl = null;
+  };
+
   const render = (code = lang()) => {
     state.mediaByProject = null;
     state.query = "";
     clearSelection();
     if (state.mobile) {
-      results.replaceChildren();
-      state.resultNodes = [];
-      state.resultById = new Map();
-      state.activeEl = null;
-    } else {
+      clearResults();
+    } else if (state.open) {
       buildResults(projectIndex(code));
+    } else {
+      // Defer DOM list until first open (rebuilds on next open after lang change).
+      clearResults();
     }
     syncColophon(code);
     setAriaLabels();
-    applyFilter();
+    if (state.open) applyFilter();
   };
 
   const setOpen = (open) => {
@@ -673,12 +691,7 @@ export function createIndexPanel({
   );
 
   curtain.addEventListener("click", onCurtainClick);
-
-  if (typeof mobileMq.addEventListener === "function") {
-    mobileMq.addEventListener("change", onMobileChange);
-  } else {
-    mobileMq.addListener?.(onMobileChange);
-  }
+  onMediaChange(mobileMq, onMobileChange);
 
   window.setTimeout(() => {
     state.cueReady = true;

@@ -1,5 +1,5 @@
 import { projectCopy, projectFooterPer, projectFooterCon, indexLabels, SLASH } from "./i18n.js";
-import { $, pauseVideos, wrapTnum, rafSchedule } from "./utils.js";
+import { $, pauseVideos, wrapTnum, rafSchedule, MQ } from "./utils.js";
 
 /**
  * Infinite horizontal project carousel.
@@ -13,9 +13,8 @@ export function createCarousel(root, { getLang } = {}) {
   const title = $("gallery-title");
   const per = $("gallery-per");
   const con = $("gallery-con");
-  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const finePointer = matchMedia("(hover: hover) and (pointer: fine)").matches;
-  const mobileMq = matchMedia("(max-width: 999px)");
+  const reduceMotion = matchMedia(MQ.reduceMotion).matches;
+  const finePointer = matchMedia(MQ.finePointer).matches;
   const BLUR_MAX = 18;
 
   const state = {
@@ -30,7 +29,6 @@ export function createCarousel(root, { getLang } = {}) {
     bootstrapping: true,
     covered: false,
     rect: null,
-    refreshTick: false,
     lastBlur: -1,
     videoIO: null
   };
@@ -42,7 +40,7 @@ export function createCarousel(root, { getLang } = {}) {
     state.slides = [...root.children].filter((el) =>
       el.classList.contains("carousel-slide")
     );
-    state.geometry = state.slides.map((slide) => ({ left: slide.offsetLeft }));
+    state.geometry = state.slides.map((slide) => slide.offsetLeft);
 
     const base = originals();
     state.originalCount = base.length;
@@ -77,7 +75,7 @@ export function createCarousel(root, { getLang } = {}) {
     const align = root.scrollLeft;
     let i = 0;
     for (let n = 0; n < geometry.length; n++) {
-      if (geometry[n].left <= align + 0.5) i = n;
+      if (geometry[n] <= align + 0.5) i = n;
       else break;
     }
     return slides[i] || null;
@@ -263,18 +261,13 @@ export function createCarousel(root, { getLang } = {}) {
     root.appendChild(frag);
     setupLoop();
 
-    const refresh = () => {
-      if (state.refreshTick) return;
-      state.refreshTick = true;
-      requestAnimationFrame(() => {
-        state.refreshTick = false;
-        if (state.bootstrapping) goFirst();
-        else {
-          cacheGeometry();
-          updateFooter(true);
-        }
-      });
-    };
+    const refresh = rafSchedule(() => {
+      if (state.bootstrapping) goFirst();
+      else {
+        cacheGeometry();
+        updateFooter(true);
+      }
+    });
 
     root
       .querySelectorAll(".carousel-slide:not([data-loop-clone]) img")
@@ -414,20 +407,6 @@ export function createCarousel(root, { getLang } = {}) {
   };
 
   const handleBlur = (force = false) => {
-    // Mobile hero is fluid (not sticky 100dvh) — no progressive blur while reading it.
-    if (mobileMq.matches) {
-      const hero = root.closest(".stack-section--white");
-      const past = hero
-        ? window.scrollY >= hero.offsetTop + hero.offsetHeight - 8
-        : false;
-      setCovered(past);
-      if (state.lastBlur !== 0) {
-        root.style.filter = "";
-        state.lastBlur = 0;
-      }
-      return;
-    }
-
     const y = window.scrollY;
     const vh = window.innerHeight || 1;
 
@@ -466,6 +445,7 @@ export function createCarousel(root, { getLang } = {}) {
     state.rect = null;
     cacheGeometry();
     updateFooter(true);
+    handleBlur(true);
   });
 
   shuffle();
@@ -474,12 +454,9 @@ export function createCarousel(root, { getLang } = {}) {
   handleBlur(true);
 
   window.addEventListener("scroll", onPageScroll, { passive: true });
-  const onMobileChange = () => handleBlur(true);
-  if (typeof mobileMq.addEventListener === "function") {
-    mobileMq.addEventListener("change", onMobileChange);
-  } else {
-    mobileMq.addListener?.(onMobileChange);
-  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) pauseVideos(root);
+  });
   window.addEventListener("pageshow", (e) => {
     if (!e.persisted) return;
     state.bootstrapping = true;

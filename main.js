@@ -7,6 +7,12 @@
 
 const $ = (id) => document.getElementById(id);
 
+const MQ = Object.freeze({
+  mobile: "(max-width: 999px)",
+  reduceMotion: "(prefers-reduced-motion: reduce)",
+  finePointer: "(hover: hover) and (pointer: fine)"
+});
+
 /** Classic scrollbar width (0 with overlay scrollbars). */
 const scrollbarWidth = () => {
   const outer = document.createElement("div");
@@ -34,6 +40,12 @@ const rafSchedule = (fn) => {
       fn();
     });
   };
+};
+
+/** Subscribe to a MediaQueryList change (Safari < 14 fallback). */
+const onMediaChange = (mq, fn) => {
+  if (typeof mq.addEventListener === "function") mq.addEventListener("change", fn);
+  else mq.addListener?.(fn);
 };
 
 /** Resolve element ids (or nodes) to a live element list. */
@@ -140,6 +152,9 @@ const HREF = Object.freeze({
 });
 
 const em = (html) => `<em>${html}</em>`;
+
+/** Recurring supervision credit for bruno studio. */
+const BRUNO_SUP = `${ext(HREF.bruno, "bruno")} (Andrea Codolo &amp; Giacomo Covacich)`;
 const linked = (href, html) => ext(href, em(html));
 
 const MTF = Object.freeze({
@@ -209,7 +224,7 @@ const SHARED = Object.freeze({
   serviziIt: serviziList("it")
 });
 
-/** Project catalog for a locale (`con` | `with`). Fields: year, title, per, con, tags. */
+/** Project catalog for a locale (`con` | `with`). Fields: year, title, per, con, sup, tags. */
 function projects(collab) {
   const it = collab === "con";
 
@@ -226,6 +241,7 @@ function projects(collab) {
       title: em("Molecular Blackletter"),
       per: `SOS, ${ext(HREF.mtd, "Molecular Type Design")}`,
       con: "",
+      sup: "Alberto Guerra, Puria Nafisi, Alessandro Tartaglia",
       tags: ["typeDesign"]
     },
     mr: {
@@ -233,6 +249,7 @@ function projects(collab) {
       title: em("Morning Rituals 2025"),
       per: ext(HREF.bruno, "bruno"),
       con: "",
+      sup: BRUNO_SUP,
       tags: ["graphicDesign", "photography"]
     },
     mc: {
@@ -240,6 +257,7 @@ function projects(collab) {
       title: em("Mimmo Castellano: furor graphicus"),
       per: "Iuav",
       con: "",
+      sup: "Monica Pastore, Fiorella Bulegato",
       tags: ["publishing", "research"]
     },
     sm: {
@@ -247,6 +265,7 @@ function projects(collab) {
       title: em(`Singolarità multiple. Esoeditoria in Italia 1920\u20131980`),
       per: "Iuav",
       con: "Jolanda Baudino, Chiara Lorenzo, Irene Mazzoleni",
+      sup: "Fiorella Bulegato, Valentina Nitti",
       tags: ["publishing", "research"]
     },
     alelaie: {
@@ -275,6 +294,7 @@ function projects(collab) {
       title: em("Biennale Parola"),
       per: "Iuav",
       con: "Giulia Gatta, Tommaso Antonelli",
+      sup: "Luciano Perondi, Bruno Calza",
       tags: ["publishing", "informationDesign"]
     },
     ar: {
@@ -282,6 +302,7 @@ function projects(collab) {
       title: linked(HREF.ar, it ? "La dimora del Minotauro" : "The Minotaur’s abode"),
       per: "Apparati Radicali",
       con: "",
+      sup: `Noemi Biasetton, ${BRUNO_SUP}`,
       tags: ["publishing", "artwork"]
     },
     forma: {
@@ -296,6 +317,7 @@ function projects(collab) {
       title: em("Ermes"),
       per: "PoliBa",
       con: "",
+      sup: "Michele Colonna, Enzo Ruta",
       tags: ["typeDesign"]
     },
     ic: {
@@ -303,6 +325,7 @@ function projects(collab) {
       title: em("L'incendio della casa abominevole"),
       per: "PoliBa",
       con: "Marcella Carlucci, Erasmo Giove",
+      sup: "Nino Perrone, Vito Battista",
       tags: ["informationDesign", "publishing"]
     },
     serenissima: {
@@ -310,6 +333,7 @@ function projects(collab) {
       title: em("Serenissima"),
       per: "Iuav",
       con: "Andrea Pintauro",
+      sup: "Nicola Di Croce",
       tags: ["publishing", "photography", "soundDesign"]
     },
     em: {
@@ -331,6 +355,7 @@ function projects(collab) {
       title: em("Il magazzino dei destini incrociati"),
       per: "Iuav",
       con: "Tommaso Antonelli, Alessio Costantini, Andrea Pintauro",
+      sup: "Gianni Sinni, Irene Sgarro",
       tags: ["informationDesign", "publishing"]
     },
     chiomarosa: {
@@ -338,6 +363,7 @@ function projects(collab) {
       title: em("Chiomarosa"),
       per: ext(HREF.bruno, "bruno"),
       con: "",
+      sup: BRUNO_SUP,
       tags: ["graphicDesign", "photography"]
     },
     supernico: {
@@ -388,10 +414,15 @@ const TRANSLATIONS = Object.freeze({
     ogLocale: "it_IT",
     indexLabels: {
       title: "Archivio",
-      collab: "Con"
+      collab: "Con",
+      supervision: "Supervisione"
     },
-    aboutText:
+    aboutShort:
+      "Designer e art director di base in Puglia. Tipografia, editoria, information design e web design e development, storie del design, strumenti aperti ed ecosistemi collettivi di apprendimento.",
+    aboutFull:
       "Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.",
+    aboutExpand: "Espandi",
+    aboutCollapse: "Comprimi",
     projects: projects("con"),
     curtain: {
       serviziLabel: "Servizi",
@@ -418,10 +449,15 @@ const TRANSLATIONS = Object.freeze({
     ogLocale: "en_US",
     indexLabels: {
       title: "Archive",
-      collab: "With"
+      collab: "With",
+      supervision: "Supervision"
     },
-    aboutText:
+    aboutShort:
+      "Designer and art director based in Puglia, Italy. Typography, publishing, information design and web design and development, design histories, open tools and collective learning ecosystems.",
+    aboutFull:
       "Designer and art director based in Puglia, Italy. His practice explores typography, publishing, information and web design and all the ways they interpolate each other within and without visual systems. His approach mixes curiosity and control, focusing equally on process and execution for the development of visual identities and digital spaces for brands, institutions and private clients. His research is also oriented towards design histories, open tools and learning collective ecosystems outside the institutional walls.",
+    aboutExpand: "Expand",
+    aboutCollapse: "Compress",
     projects: projects("with"),
     curtain: {
       serviziLabel: "Services",
@@ -501,11 +537,6 @@ function applyLanguage(dom, lang, onApplied) {
   configureLangButton(dom.langBtnSecondary, t.langSecondary);
   if (dom.skipLink) dom.skipLink.textContent = t.skipLink;
 
-  if (dom.introStart) dom.introStart.textContent = t.aboutText;
-  dom.introSmall?.forEach((el) => {
-    el.textContent = t.aboutText;
-  });
-
   const { labels: L, values: V } = dom;
   const C = t.curtain;
 
@@ -525,7 +556,8 @@ function projectCopy(lang, projectId) {
 
 /**
  * Carousel footer credits from structured `per` / `con`.
- * Multi-line values use the first line only (archive shows the rest).
+ * Multi-line `per` values use the first line only (archive shows the rest).
+ * Home carousel shows collaborators only; archive also renders `sup`.
  */
 const firstCreditLine = (html) =>
   String(html || "")
@@ -570,6 +602,7 @@ function projectIndex(lang) {
     const title = stripHtml(project.title);
     const per = stripHtml(project.per);
     const con = stripHtml(project.con);
+    const sup = stripHtml(project.sup);
     const year = stripHtml(project.year);
     const tagsSearch = stripHtml(tagSearchText(project.tags));
     return {
@@ -577,7 +610,7 @@ function projectIndex(lang) {
       title,
       year,
       yearKey: yearSortKey(year),
-      search: `${title} ${year} ${per} ${con} ${tagsSearch}`.toLowerCase()
+      search: `${title} ${year} ${per} ${con} ${sup} ${tagsSearch}`.toLowerCase()
     };
   });
 
@@ -718,12 +751,19 @@ async function fetchTerlizziWeather(targets) {
     /* private mode */
   }
 
-  const ctrl = new AbortController();
-  const timeout = window.setTimeout(() => ctrl.abort(), 6000);
+  let signal;
+  let timeout = 0;
+  if (typeof AbortSignal.timeout === "function") {
+    signal = AbortSignal.timeout(6000);
+  } else {
+    const ctrl = new AbortController();
+    signal = ctrl.signal;
+    timeout = window.setTimeout(() => ctrl.abort(), 6000);
+  }
 
   try {
     const res = await fetch(WEATHER_URL, {
-      signal: ctrl.signal,
+      signal,
       headers: { Accept: "application/json" }
     });
     if (!res.ok) return;
@@ -741,7 +781,7 @@ async function fetchTerlizziWeather(targets) {
   } catch {
     /* keep HTML fallback */
   } finally {
-    clearTimeout(timeout);
+    if (timeout) clearTimeout(timeout);
   }
 }
 
@@ -759,9 +799,8 @@ function createCarousel(root, { getLang } = {}) {
   const title = $("gallery-title");
   const per = $("gallery-per");
   const con = $("gallery-con");
-  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const finePointer = matchMedia("(hover: hover) and (pointer: fine)").matches;
-  const mobileMq = matchMedia("(max-width: 999px)");
+  const reduceMotion = matchMedia(MQ.reduceMotion).matches;
+  const finePointer = matchMedia(MQ.finePointer).matches;
   const BLUR_MAX = 18;
 
   const state = {
@@ -776,7 +815,6 @@ function createCarousel(root, { getLang } = {}) {
     bootstrapping: true,
     covered: false,
     rect: null,
-    refreshTick: false,
     lastBlur: -1,
     videoIO: null
   };
@@ -788,7 +826,7 @@ function createCarousel(root, { getLang } = {}) {
     state.slides = [...root.children].filter((el) =>
       el.classList.contains("carousel-slide")
     );
-    state.geometry = state.slides.map((slide) => ({ left: slide.offsetLeft }));
+    state.geometry = state.slides.map((slide) => slide.offsetLeft);
 
     const base = originals();
     state.originalCount = base.length;
@@ -823,7 +861,7 @@ function createCarousel(root, { getLang } = {}) {
     const align = root.scrollLeft;
     let i = 0;
     for (let n = 0; n < geometry.length; n++) {
-      if (geometry[n].left <= align + 0.5) i = n;
+      if (geometry[n] <= align + 0.5) i = n;
       else break;
     }
     return slides[i] || null;
@@ -1009,18 +1047,13 @@ function createCarousel(root, { getLang } = {}) {
     root.appendChild(frag);
     setupLoop();
 
-    const refresh = () => {
-      if (state.refreshTick) return;
-      state.refreshTick = true;
-      requestAnimationFrame(() => {
-        state.refreshTick = false;
-        if (state.bootstrapping) goFirst();
-        else {
-          cacheGeometry();
-          updateFooter(true);
-        }
-      });
-    };
+    const refresh = rafSchedule(() => {
+      if (state.bootstrapping) goFirst();
+      else {
+        cacheGeometry();
+        updateFooter(true);
+      }
+    });
 
     root
       .querySelectorAll(".carousel-slide:not([data-loop-clone]) img")
@@ -1160,20 +1193,6 @@ function createCarousel(root, { getLang } = {}) {
   };
 
   const handleBlur = (force = false) => {
-    // Mobile hero is fluid (not sticky 100dvh) — no progressive blur while reading it.
-    if (mobileMq.matches) {
-      const hero = root.closest(".stack-section--white");
-      const past = hero
-        ? window.scrollY >= hero.offsetTop + hero.offsetHeight - 8
-        : false;
-      setCovered(past);
-      if (state.lastBlur !== 0) {
-        root.style.filter = "";
-        state.lastBlur = 0;
-      }
-      return;
-    }
-
     const y = window.scrollY;
     const vh = window.innerHeight || 1;
 
@@ -1212,6 +1231,7 @@ function createCarousel(root, { getLang } = {}) {
     state.rect = null;
     cacheGeometry();
     updateFooter(true);
+    handleBlur(true);
   });
 
   shuffle();
@@ -1220,12 +1240,9 @@ function createCarousel(root, { getLang } = {}) {
   handleBlur(true);
 
   window.addEventListener("scroll", onPageScroll, { passive: true });
-  const onMobileChange = () => handleBlur(true);
-  if (typeof mobileMq.addEventListener === "function") {
-    mobileMq.addEventListener("change", onMobileChange);
-  } else {
-    mobileMq.addListener?.(onMobileChange);
-  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) pauseVideos(root);
+  });
   window.addEventListener("pageshow", (e) => {
     if (!e.persisted) return;
     state.bootstrapping = true;
@@ -1374,11 +1391,16 @@ const resolveQueryInput = ({ key, value, range, canOpen }) => {
   return next == null ? null : { next };
 };
 
-/** Assign Agip or Fiat for this session and warm that face. */
+/** Assign Agip or Fiat for this session; warm the face after first paint. */
 const bindQueryFace = (...els) => {
   const { className, family } = pickQueryFace();
   for (const el of els) el?.classList.add(className);
-  document.fonts?.load?.(`400 80px ${family}`).catch(() => {});
+  const warm = () => document.fonts?.load?.(`400 80px ${family}`).catch(() => {});
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(warm, { timeout: 2000 });
+  } else {
+    window.setTimeout(warm, 1);
+  }
 };
 
 const setQueryTyping = (on, html = document.documentElement) => {
@@ -1387,7 +1409,6 @@ const setQueryTyping = (on, html = document.documentElement) => {
 
 /* === index-panel.js === */
 
-const MOBILE_MQ = "(max-width: 999px)";
 const CLOSE_IGNORE = "a, button, .index-result, .index-preview__media";
 const MEDIA_SELECTOR =
   ".inline-carousel .carousel-slide:not([data-loop-clone]), #archive-media-bank .archive-media";
@@ -1405,23 +1426,26 @@ const mediaSrc = (el) => {
 
 const collectProjectMedia = () => {
   const map = new Map();
+  const seen = new Map();
 
   for (const slide of document.querySelectorAll(MEDIA_SELECTOR)) {
     const id = slide.dataset.project;
     if (!id) continue;
 
     let list = map.get(id);
+    let srcs = seen.get(id);
     if (!list) {
       list = [];
+      srcs = new Set();
       map.set(id, list);
+      seen.set(id, srcs);
     }
-
-    const hasSrc = (src) => list.some((item) => item.src === src);
 
     const img = slide.querySelector("img");
     if (img) {
       const src = mediaSrc(img);
-      if (src && !hasSrc(src)) {
+      if (src && !srcs.has(src)) {
+        srcs.add(src);
         list.push({ type: "img", src, alt: img.getAttribute("alt") || "" });
       }
       continue;
@@ -1430,7 +1454,8 @@ const collectProjectMedia = () => {
     const video = slide.querySelector("video");
     if (!video) continue;
     const src = mediaSrc(video.querySelector("source")) || mediaSrc(video);
-    if (!src || hasSrc(src)) continue;
+    if (!src || srcs.has(src)) continue;
+    srcs.add(src);
     list.push({
       type: "video",
       src,
@@ -1441,9 +1466,9 @@ const collectProjectMedia = () => {
   return map;
 };
 
-/** Year en-dashes bare; em dashes → thin + .dash (case 0). */
+/** Year en-dashes bare; em dashes → thin + .dash (case 0). Keep last two words together. */
 const withDashSpans = (s) =>
-  escapeHtml(s)
+  escapeHtml(String(s || "").replace(/\s+(\S+)\s*$/u, "\u00A0$1"))
     .replace(/(\d)[\u2009\u200A\s]*[\u2013\-][\u2009\u200A\s]*(\d)/g, `$1\u2013$2`)
     .replace(
       /[\u2009\u200A\s]*\u2014[\u2009\u200A\s]*/g,
@@ -1468,6 +1493,7 @@ function createIndexPanel({
   const metaTags = $("index-meta-tags");
   const metaPer = $("index-meta-per");
   const metaCon = $("index-meta-con");
+  const metaSup = $("index-meta-sup");
   const gateQuery = $("site-gate-query");
   const siteGate = gateQuery?.closest(".site-gate") || $("site-gate");
   if (!curtain || !results || !queryEl) return null;
@@ -1481,9 +1507,9 @@ function createIndexPanel({
     langSecondary: $("index-lang-btn-secondary")
   };
 
-  const mobileMq = window.matchMedia(MOBILE_MQ);
+  const mobileMq = window.matchMedia(MQ.mobile);
   const html = document.documentElement;
-  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduceMotion = matchMedia(MQ.reduceMotion).matches;
 
   const state = {
     open: false,
@@ -1545,6 +1571,7 @@ function createIndexPanel({
     if (metaTags) metaTags.innerHTML = "";
     if (metaPer) metaPer.innerHTML = "";
     if (metaCon) metaCon.textContent = "";
+    if (metaSup) metaSup.innerHTML = "";
   };
 
   const clearSelection = () => {
@@ -1665,7 +1692,10 @@ function createIndexPanel({
     const tagsHtml = projectTagsHtml(project.tags, lang());
     const perHtml = String(project.per || "").trim();
     const con = stripHtml(project.con);
-    const collab = indexLabels(lang())?.collab || "Con";
+    const supHtml = String(project.sup || "").trim();
+    const labels = indexLabels(lang()) || {};
+    const collab = labels.collab || "Con";
+    const supervision = labels.supervision || "Supervisione";
 
     if (metaYear) metaYear.innerHTML = wrapTnum(year);
     if (metaTags) metaTags.innerHTML = tagsHtml;
@@ -1678,8 +1708,11 @@ function createIndexPanel({
         : "";
     }
     if (metaCon) metaCon.textContent = con ? `${collab}: ${con}` : "";
+    if (metaSup) {
+      metaSup.innerHTML = supHtml ? `${supervision}: ${supHtml}` : "";
+    }
 
-    metaRoot.hidden = !(year || tagsHtml || perHtml || con);
+    metaRoot.hidden = !(year || tagsHtml || perHtml || con || supHtml);
   };
 
   const setHover = (projectId) => {
@@ -1838,21 +1871,28 @@ function createIndexPanel({
     curtain.setAttribute("aria-label", labels.title);
   };
 
+  const clearResults = () => {
+    results.replaceChildren();
+    state.resultNodes = [];
+    state.resultById = new Map();
+    state.activeEl = null;
+  };
+
   const render = (code = lang()) => {
     state.mediaByProject = null;
     state.query = "";
     clearSelection();
     if (state.mobile) {
-      results.replaceChildren();
-      state.resultNodes = [];
-      state.resultById = new Map();
-      state.activeEl = null;
-    } else {
+      clearResults();
+    } else if (state.open) {
       buildResults(projectIndex(code));
+    } else {
+      // Defer DOM list until first open (rebuilds on next open after lang change).
+      clearResults();
     }
     syncColophon(code);
     setAriaLabels();
-    applyFilter();
+    if (state.open) applyFilter();
   };
 
   const setOpen = (open) => {
@@ -2043,12 +2083,7 @@ function createIndexPanel({
   );
 
   curtain.addEventListener("click", onCurtainClick);
-
-  if (typeof mobileMq.addEventListener === "function") {
-    mobileMq.addEventListener("change", onMobileChange);
-  } else {
-    mobileMq.addListener?.(onMobileChange);
-  }
+  onMediaChange(mobileMq, onMobileChange);
 
   window.setTimeout(() => {
     state.cueReady = true;
@@ -2094,7 +2129,9 @@ const hasArchiveHash = () => ARCHIVE_HASHES.has(readHash());
 
 const dom = {
   carousel: document.querySelector(".inline-carousel"),
+  hero: document.querySelector(".stack-section--white"),
   introStart: $("intro-text-start"),
+  introExpand: $("intro-expand"),
   introSmall: document.querySelectorAll(".intro-text-start-small"),
   skipLink: document.querySelector(".skip-link"),
   langBtnPrimary: $("lang-btn-primary"),
@@ -2123,13 +2160,35 @@ let lang =
   readLangParam() ||
   legacyLang ||
   (document.documentElement.lang === "en" ? "en" : "it");
+let aboutExpanded = false;
 const languageListeners = [];
+const mobileMq = window.matchMedia(MQ.mobile);
 
 const writeUrl = ({ lang: nextLang = lang, archive = index?.isOpen() } = {}) => {
   const url = new URL(location.href);
   url.searchParams.set("lang", nextLang);
   url.hash = archive ? ARCHIVE_HASH : "";
   history.replaceState(null, "", url);
+};
+
+/** Desktop: full bio. Mobile: short + optional expand. */
+const syncAbout = (code = lang) => {
+  const t = TRANSLATIONS[code];
+  if (!t) return;
+  const mobile = mobileMq.matches;
+  const expanded = mobile && aboutExpanded;
+  if (dom.introStart) {
+    dom.introStart.textContent = !mobile || expanded ? t.aboutFull : t.aboutShort;
+  }
+  dom.introSmall?.forEach((el) => {
+    el.textContent = mobile ? t.aboutShort : t.aboutFull;
+  });
+  if (dom.introExpand) {
+    dom.introExpand.hidden = !mobile;
+    dom.introExpand.textContent = aboutExpanded ? t.aboutCollapse : t.aboutExpand;
+    dom.introExpand.setAttribute("aria-expanded", aboutExpanded ? "true" : "false");
+  }
+  dom.hero?.classList.toggle("is-about-expanded", expanded);
 };
 
 const liveClock = createColophonClock({
@@ -2144,6 +2203,7 @@ const carousel = tryCreate("carousel", () =>
 
 const notifyLanguage = () => {
   carousel?.updateFooter(true);
+  syncAbout();
   for (const fn of languageListeners) fn(lang);
 };
 
@@ -2163,21 +2223,23 @@ const index = tryCreate("archive", () =>
   })
 );
 
-applyLanguage(dom, lang, () => carousel?.updateFooter(true));
+applyLanguage(dom, lang, () => {
+  carousel?.updateFooter(true);
+  syncAbout();
+});
 if (hasArchiveHash()) index?.open();
-// Always canonicalize ?lang= + #archive (migrates #it/#en/#archivio).
 writeUrl({ archive: Boolean(index?.isOpen()) });
 
 window.addEventListener("hashchange", () => {
   const want = hasArchiveHash();
   if (want && !index?.isOpen()) {
     index?.open();
-    // Desktop-only archive: strip hash when open is a no-op (mobile).
+    // Archive is desktop-only: drop hash if open was a no-op.
     if (!index?.isOpen()) writeUrl({ archive: false });
   } else if (!want && index?.isOpen()) {
     index?.close();
   } else if (want) {
-    writeUrl({ archive: true }); // normalize #archivio → #archive
+    writeUrl({ archive: true });
   }
 });
 
@@ -2188,6 +2250,16 @@ for (const link of dom.brandLinks) {
     scrollToTop();
   });
 }
+
+dom.introExpand?.addEventListener("click", () => {
+  aboutExpanded = !aboutExpanded;
+  syncAbout();
+});
+
+onMediaChange(mobileMq, () => {
+  if (!mobileMq.matches) aboutExpanded = false;
+  syncAbout();
+});
 
 bindLangButtons([dom.langBtnPrimary, dom.langBtnSecondary], setLanguage);
 

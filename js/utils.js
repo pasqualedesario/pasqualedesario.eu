@@ -2,6 +2,12 @@
 
 export const $ = (id) => document.getElementById(id);
 
+export const MQ = Object.freeze({
+  mobile: "(max-width: 999px)",
+  reduceMotion: "(prefers-reduced-motion: reduce)",
+  finePointer: "(hover: hover) and (pointer: fine)"
+});
+
 /** Classic scrollbar width (0 with overlay scrollbars). */
 export const scrollbarWidth = () => {
   const outer = document.createElement("div");
@@ -29,6 +35,12 @@ export const rafSchedule = (fn) => {
       fn();
     });
   };
+};
+
+/** Subscribe to a MediaQueryList change (Safari < 14 fallback). */
+export const onMediaChange = (mq, fn) => {
+  if (typeof mq.addEventListener === "function") mq.addEventListener("change", fn);
+  else mq.addListener?.(fn);
 };
 
 /** Resolve element ids (or nodes) to a live element list. */
