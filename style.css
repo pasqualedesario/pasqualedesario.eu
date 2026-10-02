@@ -51,7 +51,7 @@
   src: url("assets/fonts/Agip77LLVar-opsz.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
-  font-display: optional;
+  font-display: swap;
 }
 
 @font-face {
@@ -59,7 +59,7 @@
   src: url("assets/fonts/LLFiat77-Ritmo.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
-  font-display: optional;
+  font-display: swap;
 }
 
 *,
@@ -633,13 +633,13 @@ html.is-query-typing .query-text {
 }
 
 .query-surface.is-query-agip {
-  font-family: "Agip 77", "ABC Monument Grotesk", system-ui, sans-serif;
+  font-family: "Agip 77", system-ui, sans-serif;
   font-variation-settings: "opsz" 60;
   line-height: 1;
 }
 
 .query-surface.is-query-fiat {
-  font-family: "LL Fiat 77 Ritmo", "ABC Monument Grotesk", system-ui, sans-serif;
+  font-family: "LL Fiat 77 Ritmo", system-ui, sans-serif;
   font-variation-settings: normal;
   line-height: 1.2;
 }

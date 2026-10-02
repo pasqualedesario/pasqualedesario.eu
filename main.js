@@ -1210,8 +1210,13 @@ function createCarousel(root, { getLang } = {}) {
 
 const OPEN_KEYWORDS = new Set(["archivio", "archive"]);
 
+const QUERY_FACES = Object.freeze([
+  { className: "is-query-agip", family: '"Agip 77"' },
+  { className: "is-query-fiat", family: '"LL Fiat 77 Ritmo"' }
+]);
+
 const pickQueryFace = () =>
-  Math.random() < 0.5 ? "is-query-agip" : "is-query-fiat";
+  QUERY_FACES[(Math.random() * QUERY_FACES.length) | 0];
 
 const queryTextNode = (el) => el?.querySelector(".query-text") ?? null;
 
@@ -1322,9 +1327,11 @@ const resolveQueryInput = ({ key, value, range, canOpen }) => {
   return next == null ? null : { next };
 };
 
+/** Assign Agip or Fiat for this session and warm that face. */
 const bindQueryFace = (...els) => {
-  const face = pickQueryFace();
-  for (const el of els) el?.classList.add(face);
+  const { className, family } = pickQueryFace();
+  for (const el of els) el?.classList.add(className);
+  document.fonts?.load?.(`400 80px ${family}`).catch(() => {});
 };
 
 const setQueryTyping = (on, html = document.documentElement) => {
