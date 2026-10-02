@@ -408,20 +408,6 @@ export function createCarousel(root, { getLang } = {}) {
   };
 
   const handleBlur = (force = false) => {
-    // Mobile hero is fluid (bio + 100svh gallery) — cover only after the whole section.
-    if (mobileMq.matches) {
-      const hero = root.closest(".stack-section--white");
-      const past = hero
-        ? window.scrollY >= hero.offsetTop + hero.offsetHeight - 8
-        : false;
-      setCovered(past);
-      if (state.lastBlur !== 0) {
-        root.style.filter = "";
-        state.lastBlur = 0;
-      }
-      return;
-    }
-
     const y = window.scrollY;
     const vh = window.innerHeight || 1;
 

@@ -294,7 +294,7 @@ export const TRANSLATIONS = Object.freeze({
       supervision: "Supervisione"
     },
     aboutShort:
-      "Designer e art director di base in Puglia. Tipografia, editoria, information design, web design e development, storie del design, strumenti aperti ed ecosistemi collettivi di apprendimento.",
+      "Designer e art director di base in Puglia.",
     aboutFull:
       "Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.",
     aboutExpand: "Espandi",
@@ -329,7 +329,7 @@ export const TRANSLATIONS = Object.freeze({
       supervision: "Supervision"
     },
     aboutShort:
-      "Designer and art director based in Puglia, Italy. Typography, publishing, information design, web design and development, design histories, open tools and collective learning ecosystems.",
+      "Designer and art director based in Puglia, Italy.",
     aboutFull:
       "Designer and art director based in Puglia, Italy. His practice explores typography, publishing, information and web design and all the ways they interpolate each other within and without visual systems. His approach mixes curiosity and control, focusing equally on process and execution for the development of visual identities and digital spaces for brands, institutions and private clients. His research is also oriented towards design histories, open tools and learning collective ecosystems outside the institutional walls.",
     aboutExpand: "Expand",
