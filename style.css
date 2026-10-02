@@ -827,7 +827,7 @@ html.is-index-open .site-gate {
   padding-left: var(--gap);
 }
 
-/* Top meta: colophon column, top-aligned with first project row */
+/* Top meta: same 4-col track as .curtain-colophon-grid (col 3 = credit) */
 .index-meta-rail {
   position: absolute;
   top: calc(var(--gap) + var(--lh-small) + var(--index-list-gap));
@@ -835,7 +835,7 @@ html.is-index-open .site-gate {
   right: var(--gap);
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, calc((100% - 3 * var(--gap)) / 4));
   column-gap: var(--gap);
   pointer-events: none;
 }
