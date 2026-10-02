@@ -29,6 +29,7 @@ export function createCarousel(root, { getLang } = {}) {
     bootstrapping: true,
     covered: false,
     rect: null,
+    coverH: 0,
     lastBlur: -1,
     videoIO: null
   };
@@ -420,12 +421,29 @@ export function createCarousel(root, { getLang } = {}) {
     );
   };
 
+  const measureCover = () => {
+    const section = root.closest(".stack-section--white");
+    state.coverH = section?.offsetHeight || window.innerHeight || 1;
+  };
+
+  const resumeVisibleVideos = () => {
+    if (state.covered || document.hidden) return;
+    const rootRect = root.getBoundingClientRect();
+    root.querySelectorAll("video").forEach((video) => {
+      const r = video.getBoundingClientRect();
+      if (r.right <= rootRect.left || r.left >= rootRect.right) return;
+      hydrateVideo(video);
+      video.play().catch(() => {});
+    });
+  };
+
   const handleBlur = (force = false) => {
     const y = window.scrollY;
-    const vh = window.innerHeight || 1;
+    if (!state.coverH) measureCover();
+    const coverH = state.coverH || window.innerHeight || 1;
 
     // Sticky hero stays in the viewport; use scroll depth as the cover signal.
-    if (y >= vh) {
+    if (y >= coverH) {
       setCovered(true);
       return;
     }
@@ -441,7 +459,7 @@ export function createCarousel(root, { getLang } = {}) {
       return;
     }
 
-    const blur = Math.round((y / vh) * BLUR_MAX * 10) / 10;
+    const blur = Math.round((y / coverH) * BLUR_MAX * 10) / 10;
     if (force || blur !== state.lastBlur) {
       root.style.filter = `blur(${blur}px)`;
       state.lastBlur = blur;
@@ -457,6 +475,7 @@ export function createCarousel(root, { getLang } = {}) {
 
   const onResize = rafSchedule(() => {
     state.rect = null;
+    measureCover();
     scrollToLogical(Math.max(0, state.active));
     updateFooter(true);
     handleBlur(true);
@@ -467,6 +486,7 @@ export function createCarousel(root, { getLang } = {}) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         state.rect = null;
+        measureCover();
         scrollToLogical(Math.max(0, state.active));
         updateFooter(true);
         handleBlur(true);
@@ -475,6 +495,7 @@ export function createCarousel(root, { getLang } = {}) {
   };
 
   shuffle();
+  measureCover();
   initVideos();
   bindInteractions();
   handleBlur(true);
@@ -482,6 +503,7 @@ export function createCarousel(root, { getLang } = {}) {
   window.addEventListener("scroll", onPageScroll, { passive: true });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) pauseVideos(root);
+    else resumeVisibleVideos();
   });
   window.addEventListener("pageshow", (e) => {
     if (!e.persisted) return;

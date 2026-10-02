@@ -8,7 +8,6 @@
   --color-jasper: #fa2b00;
 
   --font-sans: "ABC Monument Grotesk", system-ui, sans-serif;
-  --font-mono: var(--font-sans);
   --font-weight: 900;
   --font-features: "liga" 1, "kern" 1, "calt" 1;
   --font-features-case: var(--font-features), "case" 1, "lnum" 1;
@@ -135,7 +134,7 @@ video {
   padding: 0.35em 0.6em;
   background: var(--color-black);
   color: var(--color-white);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: var(--fs-small);
   line-height: var(--lh-small);
   transform: translateY(-200%);
@@ -295,7 +294,7 @@ video {
 .intro-text-start-small,
 .index-title,
 .index-meta {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: var(--fs-small);
   line-height: var(--lh-small);
   font-weight: var(--font-weight);
@@ -304,14 +303,13 @@ video {
 }
 
 .lang-separator {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-feature-settings: var(--font-features-case);
   user-select: none;
 }
 
 .intro-paragraph,
 .intro-text-start,
-.intro-text-start a,
 .section-value-large,
 .section-value-large a,
 .section-value-large em {
@@ -323,15 +321,26 @@ video {
 }
 
 .intro-paragraph,
-.intro-text-start,
-.intro-text-start a {
+.intro-text-start {
   line-height: var(--lh-base);
   margin: 0;
   max-width: 100%;
   text-wrap: pretty;
 }
 
-/* Trim trailing line-box air so only expand / carousel gap remains */
+.intro-lede {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.stack-section--white .intro-lede {
+  gap: var(--gap);
+}
+
+/* Trim trailing line-box so bio↔Espandi gap is one rhythm, not gap + leading */
 .stack-section--white .intro-paragraph {
   text-box: trim-end cap alphabetic;
 }
@@ -430,7 +439,6 @@ video {
   display: flex;
   align-items: center;
   gap: var(--gap);
-  margin-top: 0;
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
@@ -549,11 +557,6 @@ a:focus-visible i,
     display: block;
   }
 
-  /* Stable leading: name on its own line; no text-box trim (avoids expand jump) */
-  .stack-section--white .intro-paragraph {
-    text-box: normal;
-  }
-
   .stack-section--white .intro-paragraph .brand-name {
     display: block;
     width: auto;
@@ -562,17 +565,9 @@ a:focus-visible i,
 
   /* One sticky screen: bio (+ expand) + max gallery + project footer */
   .stack-section--white {
-    position: sticky;
     height: 100svh;
     min-height: 100svh;
     max-height: 100svh;
-    overflow: hidden;
-  }
-
-  .stack-section--white .section-content {
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
   }
 
   .stack-section--white .inline-carousel {
@@ -659,10 +654,6 @@ a:focus-visible i,
     width: auto;
   }
 
-  .stack-section--contact .lang-btn {
-    padding-inline: 0;
-  }
-
   .stack-section--contact .lang-separator {
     margin-inline: 0;
     padding-inline: 0;
@@ -684,7 +675,6 @@ a:focus-visible i,
   .error-page {
     position: relative;
     inset: auto;
-    right: auto;
     min-height: 100svh;
   }
 
@@ -697,11 +687,6 @@ a:focus-visible i,
   .index-curtain {
     display: none !important;
     pointer-events: none !important;
-  }
-
-  html.is-index-open {
-    overflow: auto;
-    padding-right: 0;
   }
 }
 

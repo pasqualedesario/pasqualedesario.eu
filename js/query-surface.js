@@ -1,14 +1,9 @@
 /** Shared query typing surfaces (site gate + archive filter). */
 
-const OPEN_KEYWORDS = new Set(["archivio", "archive"]);
-
-const QUERY_FACES = Object.freeze([
-  { className: "is-query-agip", family: '"Agip 77"' },
-  { className: "is-query-fiat", family: '"LL Fiat 77 Ritmo"' }
-]);
-
-const pickQueryFace = () =>
-  QUERY_FACES[(Math.random() * QUERY_FACES.length) | 0];
+/** Keywords that open the archive (typed gate + URL hash). */
+export const ARCHIVE_OPEN_KEYWORDS = Object.freeze(
+  new Set(["archivio", "archive"])
+);
 
 const queryTextNode = (el) => el?.querySelector(".query-text") ?? null;
 
@@ -19,7 +14,7 @@ export const normalizeQuery = (value) =>
     .toLowerCase();
 
 const isOpenKeyword = (value) =>
-  OPEN_KEYWORDS.has(normalizeQuery(value));
+  ARCHIVE_OPEN_KEYWORDS.has(normalizeQuery(value));
 
 const editText = (value, key) => {
   if (key === "Backspace") return value.slice(0, -1);
@@ -117,18 +112,6 @@ export const resolveQueryInput = ({ key, value, range, canOpen }) => {
 
   const next = editText(value, key);
   return next == null ? null : { next };
-};
-
-/** Assign Agip or Fiat for this session; warm the face after first paint. */
-export const bindQueryFace = (...els) => {
-  const { className, family } = pickQueryFace();
-  for (const el of els) el?.classList.add(className);
-  const warm = () => document.fonts?.load?.(`400 80px ${family}`).catch(() => {});
-  if (typeof requestIdleCallback === "function") {
-    requestIdleCallback(warm, { timeout: 2000 });
-  } else {
-    window.setTimeout(warm, 1);
-  }
 };
 
 export const setQueryTyping = (on, html = document.documentElement) => {

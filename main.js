@@ -13,6 +13,38 @@ const MQ = Object.freeze({
   finePointer: "(hover: hover) and (pointer: fine)"
 });
 
+/** `?lang=it|en` from the URL, or null. */
+const readLangParam = () => {
+  const v = new URLSearchParams(location.search).get("lang");
+  return v === "en" || v === "it" ? v : null;
+};
+
+/** Wire a language toggle button from `{ text, target }`. */
+const configureLangButton = (btn, cfg) => {
+  if (!btn || !cfg) return;
+  btn.textContent = cfg.text;
+  btn.dataset.targetLang = cfg.target;
+  btn.setAttribute("aria-label", `Set language ${cfg.text}`);
+};
+
+const QUERY_FACES = Object.freeze([
+  { className: "is-query-agip", family: '"Agip 77"' },
+  { className: "is-query-fiat", family: '"LL Fiat 77 Ritmo"' }
+]);
+
+/** Assign Agip or Fiat for this session; warm the face after first paint. */
+const bindQueryFace = (...els) => {
+  const face = QUERY_FACES[(Math.random() * QUERY_FACES.length) | 0];
+  for (const el of els) el?.classList.add(face.className);
+  const warm = () =>
+    document.fonts?.load?.(`400 80px ${face.family}`).catch(() => {});
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(warm, { timeout: 2000 });
+  } else {
+    window.setTimeout(warm, 1);
+  }
+};
+
 /** Classic scrollbar width (0 with overlay scrollbars). */
 const scrollbarWidth = () => {
   const outer = document.createElement("div");
@@ -417,6 +449,7 @@ const TRANSLATIONS = Object.freeze({
       collab: "Con",
       supervision: "Supervisione"
     },
+    // about* also mirrored in index.html early-boot (FOUC); keep in sync.
     aboutShort:
       "Designer e art director di base in Puglia.",
     aboutFull:
@@ -499,13 +532,6 @@ const META_SELECTORS = Object.freeze([
   'meta[property="og:description"]',
   'meta[name="twitter:description"]'
 ]);
-
-const configureLangButton = (btn, cfg) => {
-  if (!btn || !cfg) return;
-  btn.textContent = cfg.text;
-  btn.dataset.targetLang = cfg.target;
-  btn.setAttribute("aria-label", `Set language ${cfg.text}`);
-};
 
 const syncDocumentMeta = (t) => {
   if (t.documentTitle) document.title = t.documentTitle;
@@ -815,6 +841,7 @@ function createCarousel(root, { getLang } = {}) {
     bootstrapping: true,
     covered: false,
     rect: null,
+    coverH: 0,
     lastBlur: -1,
     videoIO: null
   };
@@ -1206,12 +1233,29 @@ function createCarousel(root, { getLang } = {}) {
     );
   };
 
+  const measureCover = () => {
+    const section = root.closest(".stack-section--white");
+    state.coverH = section?.offsetHeight || window.innerHeight || 1;
+  };
+
+  const resumeVisibleVideos = () => {
+    if (state.covered || document.hidden) return;
+    const rootRect = root.getBoundingClientRect();
+    root.querySelectorAll("video").forEach((video) => {
+      const r = video.getBoundingClientRect();
+      if (r.right <= rootRect.left || r.left >= rootRect.right) return;
+      hydrateVideo(video);
+      video.play().catch(() => {});
+    });
+  };
+
   const handleBlur = (force = false) => {
     const y = window.scrollY;
-    const vh = window.innerHeight || 1;
+    if (!state.coverH) measureCover();
+    const coverH = state.coverH || window.innerHeight || 1;
 
     // Sticky hero stays in the viewport; use scroll depth as the cover signal.
-    if (y >= vh) {
+    if (y >= coverH) {
       setCovered(true);
       return;
     }
@@ -1227,7 +1271,7 @@ function createCarousel(root, { getLang } = {}) {
       return;
     }
 
-    const blur = Math.round((y / vh) * BLUR_MAX * 10) / 10;
+    const blur = Math.round((y / coverH) * BLUR_MAX * 10) / 10;
     if (force || blur !== state.lastBlur) {
       root.style.filter = `blur(${blur}px)`;
       state.lastBlur = blur;
@@ -1243,6 +1287,7 @@ function createCarousel(root, { getLang } = {}) {
 
   const onResize = rafSchedule(() => {
     state.rect = null;
+    measureCover();
     scrollToLogical(Math.max(0, state.active));
     updateFooter(true);
     handleBlur(true);
@@ -1253,6 +1298,7 @@ function createCarousel(root, { getLang } = {}) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         state.rect = null;
+        measureCover();
         scrollToLogical(Math.max(0, state.active));
         updateFooter(true);
         handleBlur(true);
@@ -1261,6 +1307,7 @@ function createCarousel(root, { getLang } = {}) {
   };
 
   shuffle();
+  measureCover();
   initVideos();
   bindInteractions();
   handleBlur(true);
@@ -1268,6 +1315,7 @@ function createCarousel(root, { getLang } = {}) {
   window.addEventListener("scroll", onPageScroll, { passive: true });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) pauseVideos(root);
+    else resumeVisibleVideos();
   });
   window.addEventListener("pageshow", (e) => {
     if (!e.persisted) return;
@@ -1298,15 +1346,10 @@ function createCarousel(root, { getLang } = {}) {
 /* === query-surface.js === */
 /** Shared query typing surfaces (site gate + archive filter). */
 
-const OPEN_KEYWORDS = new Set(["archivio", "archive"]);
-
-const QUERY_FACES = Object.freeze([
-  { className: "is-query-agip", family: '"Agip 77"' },
-  { className: "is-query-fiat", family: '"LL Fiat 77 Ritmo"' }
-]);
-
-const pickQueryFace = () =>
-  QUERY_FACES[(Math.random() * QUERY_FACES.length) | 0];
+/** Keywords that open the archive (typed gate + URL hash). */
+const ARCHIVE_OPEN_KEYWORDS = Object.freeze(
+  new Set(["archivio", "archive"])
+);
 
 const queryTextNode = (el) => el?.querySelector(".query-text") ?? null;
 
@@ -1317,7 +1360,7 @@ const normalizeQuery = (value) =>
     .toLowerCase();
 
 const isOpenKeyword = (value) =>
-  OPEN_KEYWORDS.has(normalizeQuery(value));
+  ARCHIVE_OPEN_KEYWORDS.has(normalizeQuery(value));
 
 const editText = (value, key) => {
   if (key === "Backspace") return value.slice(0, -1);
@@ -1415,18 +1458,6 @@ const resolveQueryInput = ({ key, value, range, canOpen }) => {
 
   const next = editText(value, key);
   return next == null ? null : { next };
-};
-
-/** Assign Agip or Fiat for this session; warm the face after first paint. */
-const bindQueryFace = (...els) => {
-  const { className, family } = pickQueryFace();
-  for (const el of els) el?.classList.add(className);
-  const warm = () => document.fonts?.load?.(`400 80px ${family}`).catch(() => {});
-  if (typeof requestIdleCallback === "function") {
-    requestIdleCallback(warm, { timeout: 2000 });
-  } else {
-    window.setTimeout(warm, 1);
-  }
 };
 
 const setQueryTyping = (on, html = document.documentElement) => {
@@ -2097,12 +2128,6 @@ function createIndexPanel({
 
   document.addEventListener("keydown", onKeydown);
 
-  curtain.querySelector(".brand-name")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    setOpen(false);
-    scrollToTop();
-  });
-
   bindLangButtons(
     [colophon.langPrimary, colophon.langSecondary],
     (target) => onLanguageChange?.(target)
@@ -2136,14 +2161,8 @@ if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 window.scrollTo(0, 0);
 
 const ARCHIVE_HASH = "archive";
-const ARCHIVE_HASHES = new Set(["archive", "archivio"]);
 
 const readHash = () => location.hash.replace(/^#/, "").toLowerCase();
-
-const readLangParam = () => {
-  const v = new URLSearchParams(location.search).get("lang");
-  return v === "en" || v === "it" ? v : null;
-};
 
 /** Legacy site used #it / #en for language; migrate into ?lang=. */
 const readLegacyLangHash = () => {
@@ -2151,7 +2170,7 @@ const readLegacyLangHash = () => {
   return h === "en" || h === "it" ? h : null;
 };
 
-const hasArchiveHash = () => ARCHIVE_HASHES.has(readHash());
+const hasArchiveHash = () => ARCHIVE_OPEN_KEYWORDS.has(readHash());
 
 const dom = {
   carousel: document.querySelector(".inline-carousel"),
@@ -2191,7 +2210,9 @@ const mobileMq = window.matchMedia(MQ.mobile);
 
 const writeUrl = ({ lang: nextLang = lang, archive = index?.isOpen() } = {}) => {
   const url = new URL(location.href);
-  url.searchParams.set("lang", nextLang);
+  // Keep the default locale clean (`/` not `/?lang=it`).
+  if (nextLang === "it") url.searchParams.delete("lang");
+  else url.searchParams.set("lang", nextLang);
   url.hash = archive ? ARCHIVE_HASH : "";
   history.replaceState(null, "", url);
 };
@@ -2213,7 +2234,6 @@ const syncAbout = (code = lang) => {
     dom.introExpand.textContent = aboutExpanded ? t.aboutCollapse : t.aboutExpand;
     dom.introExpand.setAttribute("aria-expanded", expanded ? "true" : "false");
   }
-  if (mobile) carousel?.relayout?.();
 };
 
 const liveClock = createColophonClock({
@@ -2279,6 +2299,8 @@ for (const link of dom.brandLinks) {
 dom.introExpand?.addEventListener("click", () => {
   aboutExpanded = !aboutExpanded;
   syncAbout();
+  // ResizeObserver also fires; double-rAF resnap waits for flex settle.
+  if (mobileMq.matches) carousel?.relayout?.();
 });
 
 onMediaChange(mobileMq, () => {

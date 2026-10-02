@@ -3,17 +3,27 @@ import {
   indexLabels,
   TRANSLATIONS,
   projectTagsHtml,
-  stripHtml,
-  configureLangButton
+  stripHtml
 } from "./i18n.js";
-import { $, pauseVideos, bindLangButtons, scrollToTop, escapeHtml, wrapTnum, setScrollbarComp, rafSchedule, MQ, onMediaChange } from "./utils.js";
+import {
+  $,
+  pauseVideos,
+  bindLangButtons,
+  escapeHtml,
+  wrapTnum,
+  setScrollbarComp,
+  rafSchedule,
+  MQ,
+  onMediaChange,
+  configureLangButton,
+  bindQueryFace
+} from "./utils.js";
 import {
   normalizeQuery,
   paintQuerySurface,
   selectQueryContents,
   querySelectionRange,
   resolveQueryInput,
-  bindQueryFace,
   setQueryTyping
 } from "./query-surface.js";
 
@@ -678,12 +688,6 @@ export function createIndexPanel({
   }
 
   document.addEventListener("keydown", onKeydown);
-
-  curtain.querySelector(".brand-name")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    setOpen(false);
-    scrollToTop();
-  });
 
   bindLangButtons(
     [colophon.langPrimary, colophon.langSecondary],

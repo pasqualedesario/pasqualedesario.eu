@@ -5,6 +5,7 @@ import { createCarousel } from "./carousel.js";
 import { createIndexPanel } from "./index-panel.js";
 import { applyLanguage, TRANSLATIONS } from "./i18n.js";
 import { createColophonClock, fetchTerlizziWeather } from "./time.js";
+import { ARCHIVE_OPEN_KEYWORDS } from "./query-surface.js";
 import {
   $,
   COLOPHON,
@@ -13,21 +14,16 @@ import {
   whenIdle,
   bindLangButtons,
   scrollToTop,
-  tryCreate
+  tryCreate,
+  readLangParam
 } from "./utils.js";
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 window.scrollTo(0, 0);
 
 const ARCHIVE_HASH = "archive";
-const ARCHIVE_HASHES = new Set(["archive", "archivio"]);
 
 const readHash = () => location.hash.replace(/^#/, "").toLowerCase();
-
-const readLangParam = () => {
-  const v = new URLSearchParams(location.search).get("lang");
-  return v === "en" || v === "it" ? v : null;
-};
 
 /** Legacy site used #it / #en for language; migrate into ?lang=. */
 const readLegacyLangHash = () => {
@@ -35,7 +31,7 @@ const readLegacyLangHash = () => {
   return h === "en" || h === "it" ? h : null;
 };
 
-const hasArchiveHash = () => ARCHIVE_HASHES.has(readHash());
+const hasArchiveHash = () => ARCHIVE_OPEN_KEYWORDS.has(readHash());
 
 const dom = {
   carousel: document.querySelector(".inline-carousel"),
@@ -75,7 +71,9 @@ const mobileMq = window.matchMedia(MQ.mobile);
 
 const writeUrl = ({ lang: nextLang = lang, archive = index?.isOpen() } = {}) => {
   const url = new URL(location.href);
-  url.searchParams.set("lang", nextLang);
+  // Keep the default locale clean (`/` not `/?lang=it`).
+  if (nextLang === "it") url.searchParams.delete("lang");
+  else url.searchParams.set("lang", nextLang);
   url.hash = archive ? ARCHIVE_HASH : "";
   history.replaceState(null, "", url);
 };
@@ -97,7 +95,6 @@ const syncAbout = (code = lang) => {
     dom.introExpand.textContent = aboutExpanded ? t.aboutCollapse : t.aboutExpand;
     dom.introExpand.setAttribute("aria-expanded", expanded ? "true" : "false");
   }
-  if (mobile) carousel?.relayout?.();
 };
 
 const liveClock = createColophonClock({
@@ -163,6 +160,8 @@ for (const link of dom.brandLinks) {
 dom.introExpand?.addEventListener("click", () => {
   aboutExpanded = !aboutExpanded;
   syncAbout();
+  // ResizeObserver also fires; double-rAF resnap waits for flex settle.
+  if (mobileMq.matches) carousel?.relayout?.();
 });
 
 onMediaChange(mobileMq, () => {

@@ -1,5 +1,7 @@
 /** Bilingual copy — single source of truth for home + archive + carousel. */
 
+import { configureLangButton } from "./utils.js";
+
 const THIN = "\u2009";
 const HAIR = "\u200A";
 const PLUS = `${HAIR}<span class="plus">+</span>${HAIR}`;
@@ -293,6 +295,7 @@ export const TRANSLATIONS = Object.freeze({
       collab: "Con",
       supervision: "Supervisione"
     },
+    // about* also mirrored in index.html early-boot (FOUC); keep in sync.
     aboutShort:
       "Designer e art director di base in Puglia.",
     aboutFull:
@@ -375,13 +378,6 @@ const META_SELECTORS = Object.freeze([
   'meta[property="og:description"]',
   'meta[name="twitter:description"]'
 ]);
-
-export const configureLangButton = (btn, cfg) => {
-  if (!btn || !cfg) return;
-  btn.textContent = cfg.text;
-  btn.dataset.targetLang = cfg.target;
-  btn.setAttribute("aria-label", `Set language ${cfg.text}`);
-};
 
 const syncDocumentMeta = (t) => {
   if (t.documentTitle) document.title = t.documentTitle;

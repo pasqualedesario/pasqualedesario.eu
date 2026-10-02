@@ -52,7 +52,7 @@
 
   <link rel="preload" href="assets/fonts/ABCMonumentGrotesk-Heavy.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/media/PF2026-01.webp" as="image" type="image/webp" fetchpriority="high">
-  <link rel="stylesheet" href="style.css?v=4ed269dad6">
+  <link rel="stylesheet" href="style.css?v=1f390ea12a">
 
   <script type="application/ld+json">
   {
@@ -101,10 +101,43 @@
   <div class="scroll-stack">
     <main class="stack-section stack-section--white" id="main-content">
       <div class="section-content">
-        <h1 class="intro-paragraph">
-          <a href="#top" class="brand-name">Pasquale de Sario</a><span class="intro-text-start" id="intro-text-start">Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.</span>
-        </h1>
-        <button type="button" class="intro-expand" id="intro-expand" aria-expanded="false" hidden>Espandi</button>
+        <div class="intro-lede">
+          <h1 class="intro-paragraph">
+            <a href="#top" class="brand-name">Pasquale de Sario</a><span class="intro-text-start" id="intro-text-start">Designer e art director di base in Puglia.</span>
+          </h1>
+          <button type="button" class="intro-expand" id="intro-expand" aria-controls="intro-text-start" aria-expanded="false" hidden>Espandi</button>
+        </div>
+        <script>
+          /* Paint correct hero bio before main.js — keep strings in sync with js/i18n.js. */
+          (() => {
+            const ABOUT = {
+              it: {
+                short: "Designer e art director di base in Puglia.",
+                full: "Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.",
+                expand: "Espandi"
+              },
+              en: {
+                short: "Designer and art director based in Puglia, Italy.",
+                full: "Designer and art director based in Puglia, Italy. His practice explores typography, publishing, information and web design and all the ways they interpolate each other within and without visual systems. His approach mixes curiosity and control, focusing equally on process and execution for the development of visual identities and digital spaces for brands, institutions and private clients. His research is also oriented towards design histories, open tools and learning collective ecosystems outside the institutional walls.",
+                expand: "Expand"
+              }
+            };
+            try {
+              const lang = document.documentElement.lang === "en" ? "en" : "it";
+              const mobile = matchMedia("(max-width: 999px)").matches;
+              const t = ABOUT[lang];
+              const start = document.getElementById("intro-text-start");
+              const expand = document.getElementById("intro-expand");
+              if (start) start.textContent = mobile ? t.short : t.full;
+              if (expand && mobile) {
+                expand.hidden = false;
+                expand.textContent = t.expand;
+              }
+            } catch {
+              /* ignore */
+            }
+          })();
+        </script>
 
         <div class="inline-carousel" aria-label="Galleria progetti" tabindex="0">
           <figure class="carousel-slide" data-project="pf">
@@ -285,7 +318,7 @@
 
         <div class="curtain-about-row">
           <p class="intro-paragraph-small">
-            <a href="#top" class="brand-name">Pasquale de Sario</a><span class="intro-text-start-small">Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.</span>
+            <a href="#top" class="brand-name">Pasquale de Sario</a><span class="intro-text-start-small">Designer e art director di base in Puglia.</span>
           </p>
         </div>
       </div>
@@ -428,6 +461,6 @@
     </figure>
   </div>
 
-  <script defer src="main.js?v=36ad22c3ae"></script>
+  <script defer src="main.js?v=f2b5d4c3ce"></script>
 </body>
 </html>

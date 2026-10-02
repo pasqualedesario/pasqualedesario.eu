@@ -8,6 +8,38 @@ export const MQ = Object.freeze({
   finePointer: "(hover: hover) and (pointer: fine)"
 });
 
+/** `?lang=it|en` from the URL, or null. */
+export const readLangParam = () => {
+  const v = new URLSearchParams(location.search).get("lang");
+  return v === "en" || v === "it" ? v : null;
+};
+
+/** Wire a language toggle button from `{ text, target }`. */
+export const configureLangButton = (btn, cfg) => {
+  if (!btn || !cfg) return;
+  btn.textContent = cfg.text;
+  btn.dataset.targetLang = cfg.target;
+  btn.setAttribute("aria-label", `Set language ${cfg.text}`);
+};
+
+const QUERY_FACES = Object.freeze([
+  { className: "is-query-agip", family: '"Agip 77"' },
+  { className: "is-query-fiat", family: '"LL Fiat 77 Ritmo"' }
+]);
+
+/** Assign Agip or Fiat for this session; warm the face after first paint. */
+export const bindQueryFace = (...els) => {
+  const face = QUERY_FACES[(Math.random() * QUERY_FACES.length) | 0];
+  for (const el of els) el?.classList.add(face.className);
+  const warm = () =>
+    document.fonts?.load?.(`400 80px ${face.family}`).catch(() => {});
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(warm, { timeout: 2000 });
+  } else {
+    window.setTimeout(warm, 1);
+  }
+};
+
 /** Classic scrollbar width (0 with overlay scrollbars). */
 export const scrollbarWidth = () => {
   const outer = document.createElement("div");
