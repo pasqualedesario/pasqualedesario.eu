@@ -412,22 +412,23 @@ export function projectCopy(lang, projectId) {
 }
 
 /**
- * Carousel footer credit from structured `per` / `con`.
- * Multi-line `per` uses the first line only (archive shows the rest).
+ * Carousel footer credits from structured `per` / `con`.
+ * Multi-line values use the first line only (archive shows the rest).
  */
-export function projectFooterMeta(project, collab = "Con") {
-  if (!project) return "";
-  const firstLine = (html) =>
-    String(html || "")
-      .trim()
-      .split(/<br\s*\/?>/i)[0]
-      .trim();
-  const per = firstLine(project.per);
-  const con = firstLine(project.con);
-  if (per && con) return `@${per}${SLASH}${collab}: ${con}`;
-  if (per) return `@${per}`;
-  if (con) return `${collab}: ${con}`;
-  return "";
+const firstCreditLine = (html) =>
+  String(html || "")
+    .trim()
+    .split(/<br\s*\/?>/i)[0]
+    .trim();
+
+export function projectFooterPer(project) {
+  const per = firstCreditLine(project?.per);
+  return per ? `@${per}` : "";
+}
+
+export function projectFooterCon(project, collab = "Con") {
+  const con = firstCreditLine(project?.con);
+  return con ? `${collab}: ${con}` : "";
 }
 
 export const stripHtml = (html) =>

@@ -52,7 +52,7 @@
 
   <link rel="preload" href="assets/fonts/ABCMonumentGrotesk-Heavy.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/media/PF2026-01.webp" as="image" type="image/webp" fetchpriority="high">
-  <link rel="stylesheet" href="style.css?v=67c1cdbdbf">
+  <link rel="stylesheet" href="style.css?v=4bf652b5d5">
 
   <script type="application/ld+json">
   {
@@ -207,7 +207,8 @@
           <div class="gallery-col gallery-col--counter" id="gallery-counter"><span class="tnum">1</span>&#8202;/&#8202;<span class="tnum">24</span></div>
           <div class="gallery-col gallery-col--year" id="gallery-year"><span class="tnum">2026</span></div>
           <div class="gallery-col gallery-col--title" id="gallery-title"><em>Pergine Festival 2026</em></div>
-          <div class="gallery-col gallery-col--meta" id="gallery-meta">Con: Donato Loforese</div>
+          <div class="gallery-col gallery-col--per" id="gallery-per"></div>
+          <div class="gallery-col gallery-col--con" id="gallery-con">Con: Donato Loforese</div>
         </div>
       </footer>
     </main>
@@ -339,36 +340,29 @@
 
       <div class="index-results" id="index-results" aria-live="polite"></div>
 
-      <div class="curtain-about-row index-about-row">
-        <p class="intro-paragraph-small">
-          <a href="#top" class="brand-name">Pasquale de Sario</a><span class="intro-text-start-small">Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.</span>
-        </p>
-      </div>
-
-      <footer class="footer-bar footer-bar--colophon index-colophon">
-        <div class="curtain-colophon-grid">
-          <div class="colophon-col colophon-col--lang" role="group" aria-label="Selettore lingua">
-            <button type="button" class="lang-btn" id="index-lang-btn-primary" data-target-lang="it">Italiano</button><span class="lang-separator" aria-hidden="true">&#8202;/&#8202;</span><button type="button" class="lang-btn" id="index-lang-btn-secondary" data-target-lang="en">Inglese</button>
-          </div>
-          <div class="colophon-col colophon-col--clock">
-            <div class="colophon-line">Terlizzi&#8202;/&#8202;<span id="index-colophon-date">—</span>&#8202;/&#8202;<span id="index-colophon-weather">—</span></div>
-            <div class="colophon-line" id="index-colophon-time"><span class="tnum">--</span>:<span class="tnum">--</span>:<span class="tnum">--</span> CEST</div>
-          </div>
-          <div class="colophon-col" id="index-colophon-credit">
-            <div class="colophon-line">Design <span class="plus">+</span> Development:</div>
-            <div class="colophon-line">Pasquale de Sario (2026)</div>
-          </div>
-          <div class="colophon-col" id="index-colophon-typography">
-            <div class="colophon-line">Composto in:</div>
-            <div class="colophon-line"><a href="https://abcdinamo.com/" target="_blank" rel="noopener noreferrer">ABC Monument Grotesk</a> <span class="plus">+</span> <a href="https://lineto.com/" target="_blank" rel="noopener noreferrer">LL Fiat77</a> <span class="plus">+</span> <a href="https://lineto.com/" target="_blank" rel="noopener noreferrer">Agip77LL</a></div>
-          </div>
-        </div>
-      </footer>
-
       <div class="query-surface index-query" id="index-query" aria-live="polite" hidden></div>
     </div>
-  </aside>
 
+    <footer class="footer-bar footer-bar--colophon index-colophon">
+      <div class="curtain-colophon-grid">
+        <div class="colophon-col colophon-col--lang" role="group" aria-label="Selettore lingua">
+          <button type="button" class="lang-btn" id="index-lang-btn-primary" data-target-lang="it">Italiano</button><span class="lang-separator" aria-hidden="true">&#8202;/&#8202;</span><button type="button" class="lang-btn" id="index-lang-btn-secondary" data-target-lang="en">Inglese</button>
+        </div>
+        <div class="colophon-col colophon-col--clock">
+          <div class="colophon-line">Terlizzi&#8202;/&#8202;<span id="index-colophon-date">—</span>&#8202;/&#8202;<span id="index-colophon-weather">—</span></div>
+          <div class="colophon-line" id="index-colophon-time"><span class="tnum">--</span>:<span class="tnum">--</span>:<span class="tnum">--</span> CEST</div>
+        </div>
+        <div class="colophon-col" id="index-colophon-credit">
+          <div class="colophon-line">Design <span class="plus">+</span> Development:</div>
+          <div class="colophon-line">Pasquale de Sario (2026)</div>
+        </div>
+        <div class="colophon-col" id="index-colophon-typography">
+          <div class="colophon-line">Composto in:</div>
+          <div class="colophon-line"><a href="https://abcdinamo.com/" target="_blank" rel="noopener noreferrer">ABC Monument Grotesk</a> <span class="plus">+</span> <a href="https://lineto.com/" target="_blank" rel="noopener noreferrer">LL Fiat77</a> <span class="plus">+</span> <a href="https://lineto.com/" target="_blank" rel="noopener noreferrer">Agip77LL</a></div>
+        </div>
+      </div>
+    </footer>
+  </aside>
   <!-- Archive-only media bank (hover/click preview; not in home carousel) -->
   <div id="archive-media-bank" hidden aria-hidden="true">
     <figure class="archive-media" data-project="ermes">
@@ -432,6 +426,6 @@
     </figure>
   </div>
 
-  <script defer src="main.js?v=47271d2232"></script>
+  <script defer src="main.js?v=819ffa798b"></script>
 </body>
 </html>

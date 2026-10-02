@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Bundle js/*.js → main.js (classic IIFE) and optionally stamp asset hashes.
+"""Bundle js sources → classic IIFE scripts and stamp cache-bust hashes.
 
-Sources (order): utils, i18n, time, carousel, query-surface, index-panel,
-app.
+Bundles:
+  main.js   ← utils, i18n, time, carousel, query-surface, index-panel, app
+  error.js  ← utils, time, error-page
 
 Run from repo root:
   python3 scripts/build.py
@@ -17,17 +18,29 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ORDER = (
-    "utils.js",
-    "i18n.js",
-    "time.js",
-    "carousel.js",
-    "query-surface.js",
-    "index-panel.js",
-    "app.js",
+
+BUNDLES = (
+    {
+        "out": ROOT / "main.js",
+        "order": (
+            "utils.js",
+            "i18n.js",
+            "time.js",
+            "carousel.js",
+            "query-surface.js",
+            "index-panel.js",
+            "app.js",
+        ),
+        "html": ROOT / "index.html",
+        "script": "main.js",
+    },
+    {
+        "out": ROOT / "error.js",
+        "order": ("utils.js", "time.js", "error-page.js"),
+        "html": ROOT / "404.html",
+        "script": "error.js",
+    },
 )
-OUT = ROOT / "main.js"
-INDEX = ROOT / "index.html"
 
 
 def strip_module(src: str) -> str:
@@ -40,7 +53,6 @@ def strip_module(src: str) -> str:
                 skipping_import = False
             continue
         if s.startswith("import "):
-            # Multi-line: import { … } from "…"  or  import( …
             if ("{" in s and "}" not in s) or ("(" in s and ")" not in s):
                 skipping_import = True
             continue
@@ -50,21 +62,23 @@ def strip_module(src: str) -> str:
     return "\n".join(out)
 
 
-def build_bundle() -> str:
+def build_bundle(order: tuple[str, ...], label: str) -> str:
     parts: list[str] = []
-    for name in ORDER:
+    for name in order:
         path = ROOT / "js" / name
         if not path.is_file():
             raise FileNotFoundError(f"missing source: {path}")
         parts.append(strip_module(path.read_text()))
 
     bundle = (
-        "/*! Pasquale de Sario — classic bundle from js/*.js */\n"
+        f"/*! Pasquale de Sario — {label} from js/*.js */\n"
         "(function () {\n"
         "'use strict';\n\n"
-        + "\n\n".join(f"/* === {n} === */\n{p}" for n, p in zip(ORDER, parts))
+        + "\n\n".join(f"/* === {n} === */\n{p}" for n, p in zip(order, parts))
         + "\n})();\n"
     )
+    # Collapse runs of blank lines left by stripped imports / exports.
+    bundle = re.sub(r"\n{3,}", "\n\n", bundle)
 
     leftovers = [
         line
@@ -82,8 +96,10 @@ def short_hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()[:10]
 
 
-def stamp_index(css_hash: str, js_hash: str) -> None:
-    html = INDEX.read_text()
+def stamp_html(path: Path, *, css_hash: str, script: str, js_hash: str) -> None:
+    if not path.is_file():
+        return
+    html = path.read_text()
     html = re.sub(
         r'href="style\.css(?:\?v=[^"]*)?"',
         f'href="style.css?v={css_hash}"',
@@ -91,12 +107,12 @@ def stamp_index(css_hash: str, js_hash: str) -> None:
         count=1,
     )
     html = re.sub(
-        r'src="main\.js(?:\?v=[^"]*)?"',
-        f'src="main.js?v={js_hash}"',
+        rf'src="{re.escape(script)}(?:\?v=[^"]*)?"',
+        f'src="{script}?v={js_hash}"',
         html,
         count=1,
     )
-    INDEX.write_text(html)
+    path.write_text(html)
 
 
 def main() -> int:
@@ -104,32 +120,50 @@ def main() -> int:
     parser.add_argument(
         "--check",
         action="store_true",
-        help="exit 1 if main.js is out of date (no write)",
+        help="exit 1 if any bundle is out of date (no write)",
     )
     parser.add_argument(
         "--no-stamp",
         action="store_true",
-        help="skip cache-bust query params on index.html",
+        help="skip cache-bust query params on HTML",
     )
     args = parser.parse_args()
 
-    bundle = build_bundle()
+    built: list[tuple[dict, str]] = []
+    for spec in BUNDLES:
+        label = spec["out"].name
+        bundle = build_bundle(spec["order"], label)
+        built.append((spec, bundle))
 
     if args.check:
-        current = OUT.read_text() if OUT.is_file() else ""
-        if current != bundle:
-            print("main.js is out of date — run: python3 scripts/build.py", file=sys.stderr)
+        stale = False
+        for spec, bundle in built:
+            current = spec["out"].read_text() if spec["out"].is_file() else ""
+            if current != bundle:
+                print(
+                    f"{spec['out'].name} is out of date — run: python3 scripts/build.py",
+                    file=sys.stderr,
+                )
+                stale = True
+        if stale:
             return 1
-        print("main.js up to date")
+        print("bundles up to date")
         return 0
 
-    OUT.write_text(bundle)
-    print(f"main.js → {len(bundle):,} bytes")
+    for spec, bundle in built:
+        spec["out"].write_text(bundle)
+        print(f"{spec['out'].name} → {len(bundle):,} bytes")
 
     if not args.no_stamp:
-        css = ROOT / "style.css"
-        stamp_index(short_hash(css), short_hash(OUT))
-        print("index.html cache-bust stamped")
+        css_hash = short_hash(ROOT / "style.css")
+        for spec, _ in built:
+            stamp_html(
+                spec["html"],
+                css_hash=css_hash,
+                script=spec["script"],
+                js_hash=short_hash(spec["out"]),
+            )
+            print(f"{spec['html'].name} cache-bust stamped")
 
     return 0
 

@@ -1,15 +1,60 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" class="is-error-page">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
   <meta name="robots" content="noindex, follow">
   <title>404 — Pasquale de Sario</title>
+  <meta name="description" content="Pagina non trovata — Pasquale de Sario">
   <link rel="canonical" href="https://pasqualedesario.eu/">
-  <meta http-equiv="refresh" content="0;url=/">
-  <script>location.replace("/");</script>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css?v=4bf652b5d5">
 </head>
 <body>
-  <p><a href="/">Pasquale de Sario</a> — pagina non trovata.</p>
+  <main class="error-page" aria-labelledby="error-heading">
+    <div class="index-curtain__inner">
+      <h1 class="visually-hidden" id="error-heading" data-it="404 — pagina non trovata" data-en="404 — page not found">404 — pagina non trovata</h1>
+
+      <p class="index-title">
+        <a
+          href="/"
+          id="error-home-link"
+          data-it="Torna su pasqualedesario.eu"
+          data-en="Back to pasqualedesario.eu"
+        >Torna su pasqualedesario.eu</a>
+      </p>
+
+      <div class="error-page__spacer" aria-hidden="true"></div>
+
+      <div class="query-surface index-query error-page__code" id="error-code" aria-hidden="true">
+        <span class="query-text">404</span>
+      </div>
+    </div>
+
+    <footer class="footer-bar footer-bar--colophon index-colophon">
+      <div class="curtain-colophon-grid">
+        <div class="colophon-col colophon-col--lang" role="group" aria-label="Selettore lingua">
+          <button type="button" class="lang-btn" id="error-lang-primary" data-target-lang="it">Italiano</button><span class="lang-separator" aria-hidden="true">&#8202;/&#8202;</span><button type="button" class="lang-btn" id="error-lang-secondary" data-target-lang="en">Inglese</button>
+        </div>
+        <div class="colophon-col colophon-col--clock">
+          <div class="colophon-line">Terlizzi&#8202;/&#8202;<span id="error-colophon-date">—</span>&#8202;/&#8202;<span id="error-colophon-weather">—</span></div>
+          <div class="colophon-line" id="error-colophon-time"><span class="tnum">--</span>:<span class="tnum">--</span>:<span class="tnum">--</span> CEST</div>
+        </div>
+        <div class="colophon-col">
+          <div class="colophon-line">Design <span class="plus">+</span> Development:</div>
+          <div class="colophon-line">Pasquale de Sario (2026)</div>
+        </div>
+        <div class="colophon-col">
+          <div class="colophon-line" id="error-typography-label" data-it="Composto in:" data-en="Typeset in:">Composto in:</div>
+          <div class="colophon-line"><a href="https://abcdinamo.com/" target="_blank" rel="noopener noreferrer">ABC Monument Grotesk</a> <span class="plus">+</span> <a href="https://lineto.com/" target="_blank" rel="noopener noreferrer">LL Fiat77</a> <span class="plus">+</span> <a href="https://lineto.com/" target="_blank" rel="noopener noreferrer">Agip77LL</a></div>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script defer src="error.js?v=a8b1ea55f2"></script>
 </body>
 </html>

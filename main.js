@@ -1,4 +1,4 @@
-/*! Pasquale de Sario — classic bundle from js/*.js */
+/*! Pasquale de Sario — main.js from js/*.js */
 (function () {
 'use strict';
 
@@ -6,6 +6,35 @@
 /** Shared DOM / runtime helpers (zero-framework). */
 
 const $ = (id) => document.getElementById(id);
+
+/** Classic scrollbar width (0 with overlay scrollbars). */
+const scrollbarWidth = () => {
+  const outer = document.createElement("div");
+  outer.style.cssText =
+    "visibility:hidden;overflow:scroll;position:absolute;top:0;left:0;width:100px;height:100px";
+  document.body.appendChild(outer);
+  const w = outer.offsetWidth - outer.clientWidth;
+  outer.remove();
+  return w;
+};
+
+/** Keep fixed archive/404 frame aligned with in-flow home columns. */
+const setScrollbarComp = (px) => {
+  document.documentElement.style.setProperty("--sbw", `${Math.max(0, px | 0)}px`);
+};
+
+/** Coalesce work onto the next animation frame (scroll / resize / pointer). */
+const rafSchedule = (fn) => {
+  let pending = false;
+  return () => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      fn();
+    });
+  };
+};
 
 /** Resolve element ids (or nodes) to a live element list. */
 const nodesFor = (ids) =>
@@ -42,7 +71,12 @@ const pauseVideos = (root) => {
   });
 };
 
+/** Defer non-critical work past first paint / interaction. */
 const whenIdle = (fn, timeout = 2500) => {
+  if (typeof scheduler?.postTask === "function") {
+    scheduler.postTask(fn, { priority: "background", delay: 0 }).catch(() => fn());
+    return;
+  }
   if (typeof requestIdleCallback === "function") {
     requestIdleCallback(() => fn(), { timeout });
     return;
@@ -490,22 +524,23 @@ function projectCopy(lang, projectId) {
 }
 
 /**
- * Carousel footer credit from structured `per` / `con`.
- * Multi-line `per` uses the first line only (archive shows the rest).
+ * Carousel footer credits from structured `per` / `con`.
+ * Multi-line values use the first line only (archive shows the rest).
  */
-function projectFooterMeta(project, collab = "Con") {
-  if (!project) return "";
-  const firstLine = (html) =>
-    String(html || "")
-      .trim()
-      .split(/<br\s*\/?>/i)[0]
-      .trim();
-  const per = firstLine(project.per);
-  const con = firstLine(project.con);
-  if (per && con) return `@${per}${SLASH}${collab}: ${con}`;
-  if (per) return `@${per}`;
-  if (con) return `${collab}: ${con}`;
-  return "";
+const firstCreditLine = (html) =>
+  String(html || "")
+    .trim()
+    .split(/<br\s*\/?>/i)[0]
+    .trim();
+
+function projectFooterPer(project) {
+  const per = firstCreditLine(project?.per);
+  return per ? `@${per}` : "";
+}
+
+function projectFooterCon(project, collab = "Con") {
+  const con = firstCreditLine(project?.con);
+  return con ? `${collab}: ${con}` : "";
 }
 
 const stripHtml = (html) =>
@@ -631,6 +666,7 @@ function createColophonClock({
   };
 
   const tick = () => {
+    if (document.hidden) return;
     const now = new Date();
     const clock = formatClock(now);
     if (clock !== lastClock) {
@@ -721,9 +757,11 @@ function createCarousel(root, { getLang } = {}) {
   const counter = $("gallery-counter");
   const year = $("gallery-year");
   const title = $("gallery-title");
-  const meta = $("gallery-meta");
+  const per = $("gallery-per");
+  const con = $("gallery-con");
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const mobileMq = matchMedia("(max-width: 999px)");
   const BLUR_MAX = 18;
 
   const state = {
@@ -738,8 +776,6 @@ function createCarousel(root, { getLang } = {}) {
     bootstrapping: true,
     covered: false,
     rect: null,
-    scrollTick: false,
-    blurTick: false,
     refreshTick: false,
     lastBlur: -1,
     videoIO: null
@@ -816,10 +852,9 @@ function createCarousel(root, { getLang } = {}) {
     if (!copy) return;
     if (year) year.innerHTML = wrapTnum(copy.year || "");
     if (title) title.innerHTML = copy.title || "";
-    if (meta) {
-      const collab = indexLabels(code)?.collab || "Con";
-      meta.innerHTML = projectFooterMeta(copy, collab);
-    }
+    const collab = indexLabels(code)?.collab || "Con";
+    if (per) per.innerHTML = projectFooterPer(copy);
+    if (con) con.innerHTML = projectFooterCon(copy, collab);
   };
 
   const goFirst = () => {
@@ -1110,13 +1145,7 @@ function createCarousel(root, { getLang } = {}) {
       "scroll",
       () => {
         if (!state.jumping) state.bootstrapping = false;
-        if (state.scrollTick) return;
-        state.scrollTick = true;
-        requestAnimationFrame(() => {
-          normalizeLoop();
-          updateFooter();
-          state.scrollTick = false;
-        });
+        onCarouselScroll();
       },
       { passive: true }
     );
@@ -1131,6 +1160,20 @@ function createCarousel(root, { getLang } = {}) {
   };
 
   const handleBlur = (force = false) => {
+    // Mobile hero is fluid (not sticky 100dvh) — no progressive blur while reading it.
+    if (mobileMq.matches) {
+      const hero = root.closest(".stack-section--white");
+      const past = hero
+        ? window.scrollY >= hero.offsetTop + hero.offsetHeight - 8
+        : false;
+      setCovered(past);
+      if (state.lastBlur !== 0) {
+        root.style.filter = "";
+        state.lastBlur = 0;
+      }
+      return;
+    }
+
     const y = window.scrollY;
     const vh = window.innerHeight || 1;
 
@@ -1158,20 +1201,18 @@ function createCarousel(root, { getLang } = {}) {
     }
   };
 
-  const onPageScroll = () => {
-    if (state.blurTick) return;
-    state.blurTick = true;
-    requestAnimationFrame(() => {
-      handleBlur();
-      state.blurTick = false;
-    });
-  };
+  const onCarouselScroll = rafSchedule(() => {
+    normalizeLoop();
+    updateFooter();
+  });
 
-  const onResize = () => {
+  const onPageScroll = rafSchedule(() => handleBlur());
+
+  const onResize = rafSchedule(() => {
     state.rect = null;
     cacheGeometry();
     updateFooter(true);
-  };
+  });
 
   shuffle();
   initVideos();
@@ -1179,6 +1220,12 @@ function createCarousel(root, { getLang } = {}) {
   handleBlur(true);
 
   window.addEventListener("scroll", onPageScroll, { passive: true });
+  const onMobileChange = () => handleBlur(true);
+  if (typeof mobileMq.addEventListener === "function") {
+    mobileMq.addEventListener("change", onMobileChange);
+  } else {
+    mobileMq.addListener?.(onMobileChange);
+  }
   window.addEventListener("pageshow", (e) => {
     if (!e.persisted) return;
     state.bootstrapping = true;
@@ -1707,21 +1754,49 @@ function createIndexPanel({
     state.resultNodes = [];
     state.resultById = new Map();
     state.activeEl = null;
+    const total = items.length;
 
-    for (const entry of items) {
+    for (let i = 0; i < total; i++) {
+      const entry = items[i];
+      // Bottom of the list is [01]; numbers ascend toward the top
+      const num = String(total - i).padStart(2, "0");
       const el = document.createElement("span");
       el.className = "index-result";
       el.dataset.project = entry.id;
       el.dataset.search = entry.search;
       el.tabIndex = 0;
-      el.innerHTML = withDashSpans(entry.title);
+      el.innerHTML = `<span class="index-result__num tnum">[${num}]</span>${withDashSpans(entry.title)}`;
       state.resultNodes.push(el);
       state.resultById.set(entry.id, el);
       frag.appendChild(el);
     }
 
     results.replaceChildren(frag);
+    syncResultsFade();
   };
+
+  const syncResultsFade = () => {
+    const top = results.scrollTop;
+    const max = results.scrollHeight - results.clientHeight;
+    const eps = 1;
+    results.classList.toggle("is-fade-top", top > eps);
+    results.classList.toggle("is-fade-bottom", max > eps && top < max - eps);
+  };
+
+  const scheduleFade = rafSchedule(syncResultsFade);
+  const scheduleHover = rafSchedule(() => {
+    const el = results.querySelector(".index-result:hover");
+    if (el && !el.hidden) {
+      setHover(el.dataset.project);
+      return;
+    }
+    if (state.overPreview) return;
+    if (pointerOverPreview()) {
+      state.overPreview = true;
+      return;
+    }
+    clearHover();
+  });
 
   const applyFilter = () => {
     const q = normalizeQuery(state.query);
@@ -1748,6 +1823,7 @@ function createIndexPanel({
     }
 
     syncArchiveQueryDisplay();
+    syncResultsFade();
   };
 
   const setQuery = (next) => {
@@ -1783,7 +1859,10 @@ function createIndexPanel({
     if (state.mobile && open) return;
     if (state.open === open) return;
     state.open = open;
+    // Measure before overflow:hidden so archive columns match the home frame
+    if (open) setScrollbarComp(window.innerWidth - document.documentElement.clientWidth);
     html.classList.toggle("is-index-open", open);
+    if (!open) setScrollbarComp(0);
     curtain.setAttribute("aria-hidden", open ? "false" : "true");
     state.query = "";
 
@@ -1791,10 +1870,10 @@ function createIndexPanel({
       clearGate();
       curtain.removeAttribute("inert");
       results.scrollTop = 0;
-      results.scrollLeft = 0;
       if (!state.resultNodes.length) buildResults(projectIndex(lang()));
       ensureMedia();
       syncColophon();
+      requestAnimationFrame(syncResultsFade);
     } else {
       curtain.setAttribute("inert", "");
       clearSelection();
@@ -1821,28 +1900,10 @@ function createIndexPanel({
     setOpen(false);
   };
 
-  const onResultsWheel = (e) => {
-    if (!state.open) return;
-    if (results.scrollWidth <= results.clientWidth + 1) return;
-    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-    e.preventDefault();
-    results.scrollLeft += e.deltaY;
-  };
-
   const resultFromEvent = (e) => {
     const el = e.target.closest(".index-result");
     if (!el || !results.contains(el) || el.hidden) return null;
     return el;
-  };
-
-  const hoverFromPointer = (e) => {
-    const el = resultFromEvent(e);
-    if (el) {
-      setHover(el.dataset.project);
-      return;
-    }
-    if (state.overPreview) return;
-    clearHover();
   };
 
   const pointerOverPreview = (x = lastPointer.x, y = lastPointer.y) => {
@@ -1908,10 +1969,21 @@ function createIndexPanel({
     else commitQuery(result.next);
   };
 
-  results.addEventListener("pointermove", (e) => {
-    trackPointer(e);
-    hoverFromPointer(e);
-  });
+  results.addEventListener("scroll", scheduleFade, { passive: true });
+  if ("ResizeObserver" in window) {
+    new ResizeObserver(scheduleFade).observe(results);
+  } else {
+    window.addEventListener("resize", scheduleFade, { passive: true });
+  }
+
+  results.addEventListener(
+    "pointermove",
+    (e) => {
+      trackPointer(e);
+      scheduleHover();
+    },
+    { passive: true }
+  );
   results.addEventListener("pointerleave", (e) => {
     trackPointer(e);
     if (state.overPreview) return;
@@ -1941,7 +2013,6 @@ function createIndexPanel({
     const el = resultFromEvent(e);
     if (el) selectProject(el.dataset.project);
   });
-  results.addEventListener("wheel", onResultsWheel, { passive: false });
 
   if (previewMedia) {
     previewMedia.addEventListener("pointerenter", () => {

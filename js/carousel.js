@@ -1,5 +1,5 @@
-import { projectCopy, projectFooterMeta, indexLabels, SLASH } from "./i18n.js";
-import { $, pauseVideos, wrapTnum } from "./utils.js";
+import { projectCopy, projectFooterPer, projectFooterCon, indexLabels, SLASH } from "./i18n.js";
+import { $, pauseVideos, wrapTnum, rafSchedule } from "./utils.js";
 
 /**
  * Infinite horizontal project carousel.
@@ -11,9 +11,11 @@ export function createCarousel(root, { getLang } = {}) {
   const counter = $("gallery-counter");
   const year = $("gallery-year");
   const title = $("gallery-title");
-  const meta = $("gallery-meta");
+  const per = $("gallery-per");
+  const con = $("gallery-con");
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const mobileMq = matchMedia("(max-width: 999px)");
   const BLUR_MAX = 18;
 
   const state = {
@@ -28,8 +30,6 @@ export function createCarousel(root, { getLang } = {}) {
     bootstrapping: true,
     covered: false,
     rect: null,
-    scrollTick: false,
-    blurTick: false,
     refreshTick: false,
     lastBlur: -1,
     videoIO: null
@@ -106,10 +106,9 @@ export function createCarousel(root, { getLang } = {}) {
     if (!copy) return;
     if (year) year.innerHTML = wrapTnum(copy.year || "");
     if (title) title.innerHTML = copy.title || "";
-    if (meta) {
-      const collab = indexLabels(code)?.collab || "Con";
-      meta.innerHTML = projectFooterMeta(copy, collab);
-    }
+    const collab = indexLabels(code)?.collab || "Con";
+    if (per) per.innerHTML = projectFooterPer(copy);
+    if (con) con.innerHTML = projectFooterCon(copy, collab);
   };
 
   const goFirst = () => {
@@ -400,13 +399,7 @@ export function createCarousel(root, { getLang } = {}) {
       "scroll",
       () => {
         if (!state.jumping) state.bootstrapping = false;
-        if (state.scrollTick) return;
-        state.scrollTick = true;
-        requestAnimationFrame(() => {
-          normalizeLoop();
-          updateFooter();
-          state.scrollTick = false;
-        });
+        onCarouselScroll();
       },
       { passive: true }
     );
@@ -421,6 +414,20 @@ export function createCarousel(root, { getLang } = {}) {
   };
 
   const handleBlur = (force = false) => {
+    // Mobile hero is fluid (not sticky 100dvh) — no progressive blur while reading it.
+    if (mobileMq.matches) {
+      const hero = root.closest(".stack-section--white");
+      const past = hero
+        ? window.scrollY >= hero.offsetTop + hero.offsetHeight - 8
+        : false;
+      setCovered(past);
+      if (state.lastBlur !== 0) {
+        root.style.filter = "";
+        state.lastBlur = 0;
+      }
+      return;
+    }
+
     const y = window.scrollY;
     const vh = window.innerHeight || 1;
 
@@ -448,20 +455,18 @@ export function createCarousel(root, { getLang } = {}) {
     }
   };
 
-  const onPageScroll = () => {
-    if (state.blurTick) return;
-    state.blurTick = true;
-    requestAnimationFrame(() => {
-      handleBlur();
-      state.blurTick = false;
-    });
-  };
+  const onCarouselScroll = rafSchedule(() => {
+    normalizeLoop();
+    updateFooter();
+  });
 
-  const onResize = () => {
+  const onPageScroll = rafSchedule(() => handleBlur());
+
+  const onResize = rafSchedule(() => {
     state.rect = null;
     cacheGeometry();
     updateFooter(true);
-  };
+  });
 
   shuffle();
   initVideos();
@@ -469,6 +474,12 @@ export function createCarousel(root, { getLang } = {}) {
   handleBlur(true);
 
   window.addEventListener("scroll", onPageScroll, { passive: true });
+  const onMobileChange = () => handleBlur(true);
+  if (typeof mobileMq.addEventListener === "function") {
+    mobileMq.addEventListener("change", onMobileChange);
+  } else {
+    mobileMq.addListener?.(onMobileChange);
+  }
   window.addEventListener("pageshow", (e) => {
     if (!e.persisted) return;
     state.bootstrapping = true;

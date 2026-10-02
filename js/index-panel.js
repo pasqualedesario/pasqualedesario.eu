@@ -6,7 +6,7 @@ import {
   stripHtml,
   configureLangButton
 } from "./i18n.js";
-import { $, pauseVideos, bindLangButtons, scrollToTop, escapeHtml, wrapTnum } from "./utils.js";
+import { $, pauseVideos, bindLangButtons, scrollToTop, escapeHtml, wrapTnum, setScrollbarComp, rafSchedule } from "./utils.js";
 import {
   normalizeQuery,
   paintQuerySurface,
@@ -384,21 +384,49 @@ export function createIndexPanel({
     state.resultNodes = [];
     state.resultById = new Map();
     state.activeEl = null;
+    const total = items.length;
 
-    for (const entry of items) {
+    for (let i = 0; i < total; i++) {
+      const entry = items[i];
+      // Bottom of the list is [01]; numbers ascend toward the top
+      const num = String(total - i).padStart(2, "0");
       const el = document.createElement("span");
       el.className = "index-result";
       el.dataset.project = entry.id;
       el.dataset.search = entry.search;
       el.tabIndex = 0;
-      el.innerHTML = withDashSpans(entry.title);
+      el.innerHTML = `<span class="index-result__num tnum">[${num}]</span>${withDashSpans(entry.title)}`;
       state.resultNodes.push(el);
       state.resultById.set(entry.id, el);
       frag.appendChild(el);
     }
 
     results.replaceChildren(frag);
+    syncResultsFade();
   };
+
+  const syncResultsFade = () => {
+    const top = results.scrollTop;
+    const max = results.scrollHeight - results.clientHeight;
+    const eps = 1;
+    results.classList.toggle("is-fade-top", top > eps);
+    results.classList.toggle("is-fade-bottom", max > eps && top < max - eps);
+  };
+
+  const scheduleFade = rafSchedule(syncResultsFade);
+  const scheduleHover = rafSchedule(() => {
+    const el = results.querySelector(".index-result:hover");
+    if (el && !el.hidden) {
+      setHover(el.dataset.project);
+      return;
+    }
+    if (state.overPreview) return;
+    if (pointerOverPreview()) {
+      state.overPreview = true;
+      return;
+    }
+    clearHover();
+  });
 
   const applyFilter = () => {
     const q = normalizeQuery(state.query);
@@ -425,6 +453,7 @@ export function createIndexPanel({
     }
 
     syncArchiveQueryDisplay();
+    syncResultsFade();
   };
 
   const setQuery = (next) => {
@@ -460,7 +489,10 @@ export function createIndexPanel({
     if (state.mobile && open) return;
     if (state.open === open) return;
     state.open = open;
+    // Measure before overflow:hidden so archive columns match the home frame
+    if (open) setScrollbarComp(window.innerWidth - document.documentElement.clientWidth);
     html.classList.toggle("is-index-open", open);
+    if (!open) setScrollbarComp(0);
     curtain.setAttribute("aria-hidden", open ? "false" : "true");
     state.query = "";
 
@@ -468,10 +500,10 @@ export function createIndexPanel({
       clearGate();
       curtain.removeAttribute("inert");
       results.scrollTop = 0;
-      results.scrollLeft = 0;
       if (!state.resultNodes.length) buildResults(projectIndex(lang()));
       ensureMedia();
       syncColophon();
+      requestAnimationFrame(syncResultsFade);
     } else {
       curtain.setAttribute("inert", "");
       clearSelection();
@@ -498,28 +530,10 @@ export function createIndexPanel({
     setOpen(false);
   };
 
-  const onResultsWheel = (e) => {
-    if (!state.open) return;
-    if (results.scrollWidth <= results.clientWidth + 1) return;
-    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-    e.preventDefault();
-    results.scrollLeft += e.deltaY;
-  };
-
   const resultFromEvent = (e) => {
     const el = e.target.closest(".index-result");
     if (!el || !results.contains(el) || el.hidden) return null;
     return el;
-  };
-
-  const hoverFromPointer = (e) => {
-    const el = resultFromEvent(e);
-    if (el) {
-      setHover(el.dataset.project);
-      return;
-    }
-    if (state.overPreview) return;
-    clearHover();
   };
 
   const pointerOverPreview = (x = lastPointer.x, y = lastPointer.y) => {
@@ -585,10 +599,21 @@ export function createIndexPanel({
     else commitQuery(result.next);
   };
 
-  results.addEventListener("pointermove", (e) => {
-    trackPointer(e);
-    hoverFromPointer(e);
-  });
+  results.addEventListener("scroll", scheduleFade, { passive: true });
+  if ("ResizeObserver" in window) {
+    new ResizeObserver(scheduleFade).observe(results);
+  } else {
+    window.addEventListener("resize", scheduleFade, { passive: true });
+  }
+
+  results.addEventListener(
+    "pointermove",
+    (e) => {
+      trackPointer(e);
+      scheduleHover();
+    },
+    { passive: true }
+  );
   results.addEventListener("pointerleave", (e) => {
     trackPointer(e);
     if (state.overPreview) return;
@@ -618,7 +643,6 @@ export function createIndexPanel({
     const el = resultFromEvent(e);
     if (el) selectProject(el.dataset.project);
   });
-  results.addEventListener("wheel", onResultsWheel, { passive: false });
 
   if (previewMedia) {
     previewMedia.addEventListener("pointerenter", () => {

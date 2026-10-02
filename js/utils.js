@@ -2,6 +2,35 @@
 
 export const $ = (id) => document.getElementById(id);
 
+/** Classic scrollbar width (0 with overlay scrollbars). */
+export const scrollbarWidth = () => {
+  const outer = document.createElement("div");
+  outer.style.cssText =
+    "visibility:hidden;overflow:scroll;position:absolute;top:0;left:0;width:100px;height:100px";
+  document.body.appendChild(outer);
+  const w = outer.offsetWidth - outer.clientWidth;
+  outer.remove();
+  return w;
+};
+
+/** Keep fixed archive/404 frame aligned with in-flow home columns. */
+export const setScrollbarComp = (px) => {
+  document.documentElement.style.setProperty("--sbw", `${Math.max(0, px | 0)}px`);
+};
+
+/** Coalesce work onto the next animation frame (scroll / resize / pointer). */
+export const rafSchedule = (fn) => {
+  let pending = false;
+  return () => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      fn();
+    });
+  };
+};
+
 /** Resolve element ids (or nodes) to a live element list. */
 export const nodesFor = (ids) =>
   (Array.isArray(ids) ? ids : [ids])
@@ -37,7 +66,12 @@ export const pauseVideos = (root) => {
   });
 };
 
+/** Defer non-critical work past first paint / interaction. */
 export const whenIdle = (fn, timeout = 2500) => {
+  if (typeof scheduler?.postTask === "function") {
+    scheduler.postTask(fn, { priority: "background", delay: 0 }).catch(() => fn());
+    return;
+  }
   if (typeof requestIdleCallback === "function") {
     requestIdleCallback(() => fn(), { timeout });
     return;

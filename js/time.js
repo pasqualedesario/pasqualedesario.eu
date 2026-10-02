@@ -62,6 +62,7 @@ export function createColophonClock({
   };
 
   const tick = () => {
+    if (document.hidden) return;
     const now = new Date();
     const clock = formatClock(now);
     if (clock !== lastClock) {
