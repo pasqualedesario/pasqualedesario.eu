@@ -1,7 +1,6 @@
 /** 404 page — clock/weather shared; Agip/Fiat face for the code. */
 import {
   $,
-  whenIdle,
   bindLangButtons,
   scrollbarWidth,
   setScrollbarComp,
@@ -10,7 +9,7 @@ import {
   configureLangButton,
   bindQueryFace
 } from "./utils.js";
-import { createColophonClock, fetchTerlizziWeather } from "./time.js";
+import { createColophonClock, bindTerlizziWeather } from "./time.js";
 
 setScrollbarComp(scrollbarWidth());
 
@@ -74,4 +73,4 @@ document.addEventListener("visibilitychange", () => {
   else clock.start();
 });
 
-whenIdle(() => fetchTerlizziWeather("error-colophon-weather"));
+bindTerlizziWeather("error-colophon-weather");

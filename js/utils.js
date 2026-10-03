@@ -132,7 +132,8 @@ export const shuffleInPlace = (items) => {
 
 /**
  * Defer non-critical work past first paint / interaction.
- * Prefer requestIdleCallback (bounded); fall back to postTask + hard timeout.
+ * Prefer requestIdleCallback; always keep a hard setTimeout — Safari’s rIC
+ * `timeout` is unreliable while the main thread stays busy (carousel boot).
  */
 export const whenIdle = (fn, timeout = 2500) => {
   let done = false;
@@ -144,10 +145,7 @@ export const whenIdle = (fn, timeout = 2500) => {
 
   if (typeof requestIdleCallback === "function") {
     requestIdleCallback(run, { timeout });
-    return;
-  }
-  // Avoid delay:0 during carousel boot — give the main thread a short breath.
-  if (typeof scheduler?.postTask === "function") {
+  } else if (typeof scheduler?.postTask === "function") {
     scheduler
       .postTask(run, { priority: "background", delay: 400 })
       .catch(run);

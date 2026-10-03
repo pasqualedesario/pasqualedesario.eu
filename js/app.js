@@ -4,14 +4,13 @@
 import { createCarousel } from "./carousel.js";
 import { createIndexPanel } from "./index-panel.js";
 import { applyLanguage, TRANSLATIONS } from "./i18n.js";
-import { createColophonClock, fetchTerlizziWeather } from "./time.js";
+import { createColophonClock, bindTerlizziWeather } from "./time.js";
 import { ARCHIVE_OPEN_KEYWORDS } from "./query-surface.js";
 import {
   $,
   COLOPHON,
   MQ,
   onMediaChange,
-  whenIdle,
   bindLangButtons,
   scrollToTop,
   tryCreate,
@@ -172,4 +171,4 @@ document.addEventListener("visibilitychange", () => {
   else liveClock.start();
 });
 
-whenIdle(() => fetchTerlizziWeather(COLOPHON.weather));
+bindTerlizziWeather(COLOPHON.weather);

@@ -137,7 +137,8 @@ const shuffleInPlace = (items) => {
 
 /**
  * Defer non-critical work past first paint / interaction.
- * Prefer requestIdleCallback (bounded); fall back to postTask + hard timeout.
+ * Prefer requestIdleCallback; always keep a hard setTimeout — Safari’s rIC
+ * `timeout` is unreliable while the main thread stays busy (carousel boot).
  */
 const whenIdle = (fn, timeout = 2500) => {
   let done = false;
@@ -149,10 +150,7 @@ const whenIdle = (fn, timeout = 2500) => {
 
   if (typeof requestIdleCallback === "function") {
     requestIdleCallback(run, { timeout });
-    return;
-  }
-  // Avoid delay:0 during carousel boot — give the main thread a short breath.
-  if (typeof scheduler?.postTask === "function") {
+  } else if (typeof scheduler?.postTask === "function") {
     scheduler
       .postTask(run, { priority: "background", delay: 400 })
       .catch(run);
@@ -784,6 +782,9 @@ const WEATHER_URL =
 const WEATHER_TTL_MS = 30 * 60 * 1000;
 const WEATHER_KEY = "terlizzi_temp";
 const WEATHER_AT = "terlizzi_temp_time";
+const WEATHER_FETCH_MS = 10_000;
+const WEATHER_IDLE_MS = 1200;
+const WEATHER_PLACEHOLDER = /^(?:—|–|-|−)?$/;
 
 const timeFmt = new Intl.DateTimeFormat("en-GB", {
   timeZone: TZ,
@@ -873,52 +874,106 @@ const setWeatherHtml = (els, html) => {
   for (const el of els) el.innerHTML = html;
 };
 
-/** Open-Meteo Terlizzi temperature; updates every given element / id. */
-async function fetchTerlizziWeather(targets) {
-  const els = nodesFor(targets);
-  if (!els.length) return;
+const isWeatherPlaceholder = (el) =>
+  WEATHER_PLACEHOLDER.test(String(el?.textContent || "").trim());
 
+const readWeatherCache = () => {
   try {
     const cached = sessionStorage.getItem(WEATHER_KEY);
     const at = Number(sessionStorage.getItem(WEATHER_AT));
-    if (cached && at && Date.now() - at < WEATHER_TTL_MS) {
-      setWeatherHtml(els, wrapTnum(cached));
-      return;
-    }
+    if (cached && at && Date.now() - at < WEATHER_TTL_MS) return cached;
   } catch {
     /* private mode */
   }
+  return "";
+};
 
-  let signal;
-  let timeout = 0;
+const writeWeatherCache = (temp) => {
+  try {
+    sessionStorage.setItem(WEATHER_KEY, temp);
+    sessionStorage.setItem(WEATHER_AT, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+};
+
+const abortAfter = (ms) => {
   if (typeof AbortSignal.timeout === "function") {
-    signal = AbortSignal.timeout(6000);
-  } else {
-    const ctrl = new AbortController();
-    signal = ctrl.signal;
-    timeout = window.setTimeout(() => ctrl.abort(), 6000);
+    return { signal: AbortSignal.timeout(ms), cancel: () => {} };
+  }
+  const ctrl = new AbortController();
+  const id = window.setTimeout(() => ctrl.abort(), ms);
+  return { signal: ctrl.signal, cancel: () => clearTimeout(id) };
+};
+
+/** Open-Meteo Terlizzi temperature; updates every given element / id. */
+async function fetchTerlizziWeather(targets) {
+  const els = nodesFor(targets);
+  if (!els.length) return false;
+
+  const cached = readWeatherCache();
+  if (cached) {
+    setWeatherHtml(els, wrapTnum(cached));
+    return true;
   }
 
+  const { signal, cancel } = abortAfter(WEATHER_FETCH_MS);
   try {
     // No custom headers → simple CORS request (avoids preflight on mobile networks).
-    const res = await fetch(WEATHER_URL, { signal });
-    if (!res.ok) return;
+    const res = await fetch(WEATHER_URL, { signal, cache: "no-store" });
+    if (!res.ok) return false;
     const data = await res.json();
     const n = data?.current?.temperature_2m;
-    if (typeof n !== "number") return;
+    if (typeof n !== "number") return false;
     const temp = `${Math.round(n)}°C`;
     setWeatherHtml(els, wrapTnum(temp));
-    try {
-      sessionStorage.setItem(WEATHER_KEY, temp);
-      sessionStorage.setItem(WEATHER_AT, String(Date.now()));
-    } catch {
-      /* ignore */
-    }
+    writeWeatherCache(temp);
+    return true;
   } catch {
-    /* keep HTML fallback */
+    return false;
   } finally {
-    if (timeout) clearTimeout(timeout);
+    cancel();
   }
+}
+
+/**
+ * Load weather after first paint; retry when the colophon becomes visible
+ * (covers Safari idle-callback flakiness + late network on mobile).
+ */
+function bindTerlizziWeather(targets) {
+  let inflight = null;
+  const run = () => {
+    if (inflight) return inflight;
+    inflight = fetchTerlizziWeather(targets).finally(() => {
+      inflight = null;
+    });
+    return inflight;
+  };
+
+  whenIdle(run, WEATHER_IDLE_MS);
+
+  const probe = nodesFor(targets)[0];
+  if (!probe) return;
+
+  const stillEmpty = () => isWeatherPlaceholder(probe);
+
+  // Retry once after a short beat if the first attempt lost the race to boot.
+  window.setTimeout(() => {
+    if (stillEmpty()) run();
+  }, WEATHER_IDLE_MS + 800);
+
+  if (!("IntersectionObserver" in window)) return;
+
+  const io = new IntersectionObserver(
+    (entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return;
+      if (stillEmpty()) run();
+      // Keep observing until we have a value — cellular can come up late.
+      if (!stillEmpty()) io.disconnect();
+    },
+    { root: null, rootMargin: "120px 0px", threshold: 0 }
+  );
+  io.observe(probe);
 }
 
 /* === carousel.js === */
@@ -2579,5 +2634,5 @@ document.addEventListener("visibilitychange", () => {
   else liveClock.start();
 });
 
-whenIdle(() => fetchTerlizziWeather(COLOPHON.weather));
+bindTerlizziWeather(COLOPHON.weather);
 })();
