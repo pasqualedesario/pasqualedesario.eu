@@ -2,6 +2,17 @@
 <html lang="it" class="is-error-page">
 <head>
   <meta charset="UTF-8">
+  <script>
+    /* Early lang from ?lang= — before first paint of chrome. */
+    (() => {
+      try {
+        const q = new URLSearchParams(location.search).get("lang");
+        if (q === "en" || q === "it") document.documentElement.lang = q;
+      } catch {
+        /* ignore */
+      }
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <meta name="robots" content="noindex, follow">
@@ -11,7 +22,8 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="style.css?v=a52ae2cc41">
+  <link rel="preload" href="assets/fonts/ABCMonumentGrotesk-Heavy.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css?v=2133a0d507">
 </head>
 <body>
   <main class="error-page" aria-labelledby="error-heading">
@@ -55,6 +67,6 @@
     </footer>
   </main>
 
-  <script defer src="error.js?v=c12c202560"></script>
+  <script defer src="error.js?v=7b8241b31e"></script>
 </body>
 </html>

@@ -1,0 +1,13 @@
+{
+  "name": "pasqualedesario.eu",
+  "private": true,
+  "type": "module",
+  "description": "Personal site build tooling",
+  "scripts": {
+    "build": "python3 scripts/build.py",
+    "check": "python3 scripts/build.py --check"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

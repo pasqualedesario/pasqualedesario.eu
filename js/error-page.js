@@ -8,7 +8,7 @@ import {
   writeLangUrl,
   configureLangButton,
   bindQueryFace
-} from "./utils.js";
+} from "./utils-shared.js";
 import { createColophonClock, bindTerlizziWeather } from "./time.js";
 
 setScrollbarComp(scrollbarWidth());
@@ -37,7 +37,7 @@ let lang =
   readLangParam() ||
   (document.documentElement.lang === "en" ? "en" : "it");
 
-const applyLanguage = (next) => {
+const applyErrorLanguage = (next) => {
   if (next !== "it" && next !== "en") return;
   lang = next;
   document.documentElement.lang = next;
@@ -50,6 +50,7 @@ const applyLanguage = (next) => {
   setCopy(heading);
   setCopy(homeLink);
   setCopy(typographyLabel);
+  if (homeLink) homeLink.href = next === "en" ? "/?lang=en" : "/";
 
   const ui = LANG_UI[next];
   configureLangButton(langPrimary, ui.primary);
@@ -58,9 +59,9 @@ const applyLanguage = (next) => {
 };
 
 bindQueryFace(code);
-applyLanguage(lang);
+applyErrorLanguage(lang);
 bindLangButtons([langPrimary, langSecondary], (target) => {
-  if (target !== lang) applyLanguage(target);
+  if (target !== lang) applyErrorLanguage(target);
 });
 
 const clock = createColophonClock({

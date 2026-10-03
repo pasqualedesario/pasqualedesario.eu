@@ -1,5 +1,5 @@
 /** Terlizzi (Europe/Rome) live clock, date + weather. */
-import { nodesFor, wrapTnum, whenIdle } from "./utils.js";
+import { nodesFor, wrapTnum, whenIdle } from "./utils-shared.js";
 
 const TZ = "Europe/Rome";
 const WEATHER_URL =

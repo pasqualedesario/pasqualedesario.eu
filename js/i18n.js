@@ -34,7 +34,12 @@ const HREF = Object.freeze({
   dinamo: "https://abcdinamo.com/",
   lineto: "https://lineto.com/",
   alelaie: "https://www.instagram.com/p/DEAFcCboJDO",
-  ar: "https://www.instagram.com/p/DMsBdTpI6SL"
+  xyz2022: "https://v1.lascuolaopensource.xyz/xyz-2022-tradire-la-tradizione",
+  biasetton: "https://noemibiasetton.com/",
+  pinaultAr:
+    "https://www.pinaultcollection.com/palazzograssi/it/masterclass-apparati-radicali",
+  typeAround:
+    "https://salgemmaproject.com/portfolio/type-around-workshop-di-tipografia-collletttivo/"
 });
 
 const em = (html) => `<em>${html}</em>`;
@@ -43,9 +48,16 @@ const em = (html) => `<em>${html}</em>`;
 const BRUNO_SUP = `${ext(HREF.bruno, "bruno")} (Andrea Codolo &amp; Giacomo Covacich)`;
 const linked = (href, html) => ext(href, em(html));
 
-/** Apex degree note after a research title in the curtain. */
+/** Apex note after a title (research curtain + archive list). */
 const degreeNote = (label) =>
   `<sup class="research-degree">${label}</sup>`;
+
+const NOTE = Object.freeze({
+  workshop: "Workshop",
+  masterclass: "Masterclass"
+});
+
+const titled = (name, note) => `${em(name)}${note ? degreeNote(note) : ""}`;
 
 const MTF = Object.freeze({
   it: `Meme Things First${EM}Design tra politica, educazione e memetica`,
@@ -64,20 +76,28 @@ const VECCHI = Object.freeze({
     tail: "A Case Study on Movable Type in Contemporary Design"
   })
 });
-const BR_DESKTOP = '<br class="title-break-desktop">';
-/** Space before break so mobile (br hidden) still separates the two halves. */
+/** Desktop soft-break via block span (avoids oversized `<br>` line boxes). */
+const breakTail = (html) => `<span class="title-break-desktop">${html}</span>`;
+/** Space before break so mobile (inline) still separates the two halves. */
 const vecchiTitleEm = (lang) => {
   const { head, tail } = VECCHI[lang] || VECCHI.it;
-  return em(`${head} ${BR_DESKTOP}${tail}`);
+  return em(`${head} ${breakTail(tail)}`);
 };
 const vecchiResearchLine = (lang, bachelorLabel) => {
   const { head, tail } = VECCHI[lang] || VECCHI.it;
-  return `${em(head)} ${BR_DESKTOP}${em(tail)}${degreeNote(bachelorLabel)}`;
+  // Keep apex on the last title line (inside the desktop break span).
+  return `${em(head)} ${breakTail(`${em(tail)}${degreeNote(bachelorLabel)}`)}`;
 };
 
-/** Re-inject desktop soft-break after plain-text archive titles (HTML stripped). */
-export const withDesktopTitleBreak = (html) =>
-  String(html || "").replace(/(Valdemaro Vecchi:?)\s+/, `$1 ${BR_DESKTOP}`);
+/** Ensure desktop soft-break after Vecchi name when title was plain-stripped. */
+export const withDesktopTitleBreak = (html) => {
+  const s = String(html || "");
+  if (s.includes("title-break-desktop")) return s;
+  return s.replace(
+    /(Valdemaro Vecchi:?)\s+(.+)$/s,
+    `$1 <span class="title-break-desktop">$2</span>`
+  );
+};
 
 const DEGREE = Object.freeze({
   master: Object.freeze({ it: "Tesi magistrale", en: "MA Thesis" }),
@@ -87,12 +107,12 @@ const DEGREE = Object.freeze({
 const RESEARCH_LINES = Object.freeze({
   it: [
     ext(HREF.mtf, em(MTF.it)),
-    `${em(MC_TITLE)}${degreeNote(DEGREE.master.it)}`,
+    titled(MC_TITLE, DEGREE.master.it),
     vecchiResearchLine("it", DEGREE.bachelor.it)
   ].join("<br>"),
   en: [
     ext(HREF.mtf, em(MTF.en)),
-    `${em(MC_TITLE)}${degreeNote(DEGREE.master.en)}`,
+    titled(MC_TITLE, DEGREE.master.en),
     vecchiResearchLine("en", DEGREE.bachelor.en)
   ].join("<br>")
 });
@@ -126,7 +146,9 @@ const TAGS = Object.freeze({
   artwork: { it: "Artwork", en: "Artwork" },
   lettering: { it: "Lettering", en: "Lettering" },
   exhibitDesign: { it: "Exhibit Design", en: "Exhibit Design" },
-  soundDesign: { it: "Sound Design", en: "Sound Design" }
+  soundDesign: { it: "Sound Design", en: "Sound Design" },
+  videomaking: { it: "Videomaking", en: "Videomaking" },
+  coDesign: { it: "Co-progettazione", en: "Co-design" }
 });
 
 const serviziList = (lang) =>
@@ -174,10 +196,11 @@ function projects(collab) {
     mlbl: {
       year: "2026",
       title: em("Molecular Blackletter"),
-      per: `SOS, ${ext(HREF.mtd, "Molecular Type Design")}`,
+      per: "SOS",
       con: "",
       sup: "Alberto Guerra, Puria Nafisi, Alessandro Tartaglia",
-      tags: ["typeDesign"]
+      tags: ["typeDesign"],
+      links: [HREF.mtd]
     },
     mr: {
       year: "2025",
@@ -196,6 +219,14 @@ function projects(collab) {
       sup: "Monica Pastore, Fiorella Bulegato",
       tags: ["publishing", "research"]
     },
+    sacroscarto: {
+      year: "2025",
+      title: em("SACROSCARTO"),
+      per: "Iuav",
+      con: "Jolanda Baudino, Andrea Malossi, Giulia Righi",
+      sup: "Stefano Rovai, Alessandro Bulegato",
+      tags: ["visualIdentity", "publishing"]
+    },
     vv: {
       year: "2023",
       title: vecchiTitleEm(it ? "it" : "en"),
@@ -212,6 +243,14 @@ function projects(collab) {
       con: "Jolanda Baudino, Chiara Lorenzo, Irene Mazzoleni",
       sup: "Fiorella Bulegato, Valentina Nitti",
       tags: ["publishing", "research"]
+    },
+    egozip: {
+      year: "2024",
+      title: em("ego.zip"),
+      per: "Iuav",
+      con: "Jolanda Baudino, Lucrezia Bonaudo, Andrea Malossi",
+      sup: "Massimiliano Ciammaichella, Olimpia Russo",
+      tags: ["publishing", "videomaking"]
     },
     alelaie: {
       year: "2024",
@@ -244,11 +283,24 @@ function projects(collab) {
     },
     ar: {
       year: "2025",
-      title: linked(HREF.ar, it ? "La dimora del Minotauro" : "The Minotaur’s abode"),
+      title: titled(
+        it ? "La dimora del Minotauro" : "The Minotaur’s abode",
+        NOTE.masterclass
+      ),
       per: "Apparati Radicali",
       con: "",
       sup: `Noemi Biasetton, ${BRUNO_SUP}`,
-      tags: ["publishing", "artwork"]
+      tags: ["publishing", "artwork"],
+      links: [HREF.biasetton, HREF.pinaultAr]
+    },
+    typearound: {
+      year: "2024",
+      title: titled("Type Around", NOTE.workshop),
+      per: "Voga",
+      con: "",
+      sup: "Collletttivo",
+      tags: ["lettering", "typeDesign"],
+      links: [HREF.typeAround]
     },
     forma: {
       year: "2023",
@@ -256,6 +308,14 @@ function projects(collab) {
       per: "MAT",
       con: "",
       tags: ["visualIdentity", "lettering"]
+    },
+    xyz2022: {
+      year: "2022",
+      title: titled("XYZ 2022 «Tradire la tradizione»", NOTE.workshop),
+      per: "SOS",
+      con: "Gruppo X",
+      tags: ["research", "coDesign", "graphicDesign"],
+      links: [HREF.xyz2022]
     },
     ermes: {
       year: "2022",
@@ -348,6 +408,20 @@ function projects(collab) {
   };
 }
 
+/** Hero about copy — also injected into index.html early-boot by build.py. */
+export const ABOUT_BOOT = Object.freeze({
+  it: Object.freeze({
+    short: "Designer e art director di base in Puglia.",
+    full: "Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.",
+    expand: "Espandi"
+  }),
+  en: Object.freeze({
+    short: "Designer and art director based in Puglia, Italy.",
+    full: "Designer and art director based in Puglia, Italy. His practice explores typography, publishing, information and web design and all the ways they interpolate each other within and without visual systems. His approach mixes curiosity and control, focusing equally on process and execution for the development of visual identities and digital spaces for brands, institutions and private clients. His research is also oriented towards design histories, open tools and learning collective ecosystems outside the institutional walls.",
+    expand: "Expand"
+  })
+});
+
 export const TRANSLATIONS = Object.freeze({
   it: {
     langPrimary: { text: "Italiano", target: "it" },
@@ -360,19 +434,25 @@ export const TRANSLATIONS = Object.freeze({
     indexLabels: {
       title: "Archivio",
       collab: "Con",
-      supervision: "Supervisione"
+      supervision: "Supervisione",
+      link: "Link"
     },
-    // about* also mirrored in index.html early-boot (FOUC); keep in sync.
-    aboutShort:
-      "Designer e art director di base in Puglia.",
-    aboutFull:
-      "Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.",
-    aboutExpand: "Espandi",
+    aboutShort: ABOUT_BOOT.it.short,
+    aboutFull: ABOUT_BOOT.it.full,
+    aboutExpand: ABOUT_BOOT.it.expand,
     aboutCollapse: "Comprimi",
     archiveCueDesktop:
       "Scrivi archivio e premi ↙ invio per visualizzare l’archivio completo",
     archiveCueMobile:
       "Esplora l’archivio completo sul sito desktop",
+    aria: Object.freeze({
+      carousel: "Galleria progetti",
+      projectDetails: "Dettagli progetto",
+      curriculum: "Informazioni e Curriculum",
+      contact: "Contatti Diretti e Colophon",
+      lang: "Selettore lingua",
+      archive: "Archivio"
+    }),
     projects: projects("con"),
     curtain: {
       serviziLabel: "Servizi",
@@ -400,18 +480,25 @@ export const TRANSLATIONS = Object.freeze({
     indexLabels: {
       title: "Archive",
       collab: "With",
-      supervision: "Tutoring"
+      supervision: "Tutoring",
+      link: "Link"
     },
-    aboutShort:
-      "Designer and art director based in Puglia, Italy.",
-    aboutFull:
-      "Designer and art director based in Puglia, Italy. His practice explores typography, publishing, information and web design and all the ways they interpolate each other within and without visual systems. His approach mixes curiosity and control, focusing equally on process and execution for the development of visual identities and digital spaces for brands, institutions and private clients. His research is also oriented towards design histories, open tools and learning collective ecosystems outside the institutional walls.",
-    aboutExpand: "Expand",
+    aboutShort: ABOUT_BOOT.en.short,
+    aboutFull: ABOUT_BOOT.en.full,
+    aboutExpand: ABOUT_BOOT.en.expand,
     aboutCollapse: "Collapse",
     archiveCueDesktop:
       "Write archive and press ↙ enter to view the full archive",
     archiveCueMobile:
       "Explore the complete archive on desktop",
+    aria: Object.freeze({
+      carousel: "Project gallery",
+      projectDetails: "Project details",
+      curriculum: "About and curriculum",
+      contact: "Contact and colophon",
+      lang: "Language selector",
+      archive: "Archive"
+    }),
     projects: projects("with"),
     curtain: {
       serviziLabel: "Services",
@@ -454,6 +541,8 @@ const META_SELECTORS = Object.freeze([
   'meta[name="twitter:description"]'
 ]);
 
+const ARIA_ATTR = "data-i18n-aria";
+
 const syncDocumentMeta = (t) => {
   if (t.documentTitle) document.title = t.documentTitle;
   if (!t?.metaDescription) return;
@@ -473,12 +562,22 @@ const syncDocumentMeta = (t) => {
   }
 };
 
+const syncAriaLabels = (aria) => {
+  if (!aria) return;
+  for (const el of document.querySelectorAll(`[${ARIA_ATTR}]`)) {
+    const key = el.getAttribute(ARIA_ATTR);
+    const label = key && aria[key];
+    if (label) el.setAttribute("aria-label", label);
+  }
+};
+
 export function applyLanguage(dom, lang, onApplied) {
   const t = TRANSLATIONS[lang];
   if (!t) return;
 
   document.documentElement.lang = lang;
   syncDocumentMeta(t);
+  syncAriaLabels(t.aria);
 
   configureLangButton(dom.langBtnPrimary, t.langPrimary);
   configureLangButton(dom.langBtnSecondary, t.langSecondary);
@@ -550,19 +649,23 @@ export function projectIndex(lang) {
   if (!catalog) return [];
 
   const rows = Object.entries(catalog).map(([id, project]) => {
-    const title = stripHtml(project.title);
+    const titleHtml = project.title || "";
+    const title = stripHtml(titleHtml);
     const per = stripHtml(project.per);
     const degree = stripHtml(project.degree);
     const con = stripHtml(project.con);
     const sup = stripHtml(project.sup);
     const year = stripHtml(project.year);
     const tagsSearch = stripHtml(tagSearchText(project.tags));
+    const links = (project.links || []).join(" ");
     return {
       id,
       title,
+      titleHtml,
       year,
       yearKey: yearSortKey(year),
-      search: `${title} ${year} ${degree} ${per} ${con} ${sup} ${tagsSearch}`.toLowerCase()
+      search:
+        `${title} ${year} ${degree} ${per} ${con} ${sup} ${tagsSearch} ${links}`.toLowerCase()
     };
   });
 
@@ -585,4 +688,13 @@ export function indexLabels(lang) {
 /** Archive meta line: service tags joined with thin-space em dashes. */
 export function projectTagsHtml(tags, lang) {
   return tagLabels(tags, lang).join(EM);
+}
+
+/** Archive meta “Link:” line (protocol stripped from visible labels). */
+export function projectLinksHtml(links, label = "Link") {
+  const hrefs = (links || []).filter(Boolean);
+  if (!hrefs.length) return "";
+  return `${label}: ${hrefs
+    .map((href) => ext(href, String(href).replace(/^https?:\/\//, "")))
+    .join("<br>")}`;
 }

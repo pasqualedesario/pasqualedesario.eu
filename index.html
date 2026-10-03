@@ -51,7 +51,7 @@
   <meta name="twitter:image:alt" content="Pasquale de Sario">
 
   <link rel="preload" href="assets/fonts/ABCMonumentGrotesk-Heavy.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="style.css?v=a52ae2cc41">
+  <link rel="stylesheet" href="style.css?v=2133a0d507">
 
   <script type="application/ld+json">
   {
@@ -107,20 +107,21 @@
           <button type="button" class="intro-expand" id="intro-expand" aria-controls="intro-text-start" aria-expanded="false" hidden>Espandi</button>
         </div>
         <script>
-          /* Paint correct hero bio before main.js — keep strings in sync with js/i18n.js. */
+          /* === ABOUT_BOOT_START === */
+          /* Painted before main.js — generated from js/i18n.js ABOUT_BOOT. */
           (() => {
             const ABOUT = {
-              it: {
-                short: "Designer e art director di base in Puglia.",
-                full: "Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.",
-                expand: "Espandi"
-              },
-              en: {
-                short: "Designer and art director based in Puglia, Italy.",
-                full: "Designer and art director based in Puglia, Italy. His practice explores typography, publishing, information and web design and all the ways they interpolate each other within and without visual systems. His approach mixes curiosity and control, focusing equally on process and execution for the development of visual identities and digital spaces for brands, institutions and private clients. His research is also oriented towards design histories, open tools and learning collective ecosystems outside the institutional walls.",
-                expand: "Expand"
-              }
-            };
+  "it": {
+    "short": "Designer e art director di base in Puglia.",
+    "full": "Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.",
+    "expand": "Espandi"
+  },
+  "en": {
+    "short": "Designer and art director based in Puglia, Italy.",
+    "full": "Designer and art director based in Puglia, Italy. His practice explores typography, publishing, information and web design and all the ways they interpolate each other within and without visual systems. His approach mixes curiosity and control, focusing equally on process and execution for the development of visual identities and digital spaces for brands, institutions and private clients. His research is also oriented towards design histories, open tools and learning collective ecosystems outside the institutional walls.",
+    "expand": "Expand"
+  }
+};
             try {
               const lang = document.documentElement.lang === "en" ? "en" : "it";
               const mobile = matchMedia("(max-width: 999px)").matches;
@@ -136,11 +137,12 @@
               /* ignore */
             }
           })();
+          /* === ABOUT_BOOT_END === */
         </script>
 
-        <div class="inline-carousel" aria-label="Galleria progetti" tabindex="0">
+        <div class="inline-carousel" data-i18n-aria="carousel" aria-label="Galleria progetti" tabindex="0">
           <figure class="carousel-slide" data-project="pf">
-            <img src="assets/media/PF2026-01.webp" alt="Pergine Festival 2026" width="1400" height="1782" loading="lazy" decoding="async" class="carousel-item">
+            <img src="assets/media/PF2026-01.webp" alt="Pergine Festival 2026" width="1400" height="1782" loading="eager" fetchpriority="high" decoding="async" class="carousel-item">
           </figure>
           <figure class="carousel-slide" data-project="pf">
             <video class="carousel-item" width="1440" height="2560" muted loop playsinline preload="none" aria-label="Pergine Festival 2026">
@@ -235,7 +237,7 @@
         </div>
       </div>
 
-      <footer class="footer-bar" aria-label="Dettagli progetto">
+      <footer class="footer-bar" data-i18n-aria="projectDetails" aria-label="Dettagli progetto">
         <div class="gallery-footer-grid" aria-live="polite" aria-atomic="true">
           <div class="gallery-col gallery-col--counter" id="gallery-counter"><span class="tnum">1</span>&#8202;/&#8202;<span class="tnum">24</span></div>
           <div class="gallery-col gallery-col--year" id="gallery-year"><span class="tnum">2026</span></div>
@@ -246,7 +248,7 @@
       </footer>
     </main>
 
-    <section class="stack-section stack-section--gray" aria-label="Informazioni e Curriculum">
+    <section class="stack-section stack-section--gray" data-i18n-aria="curriculum" aria-label="Informazioni e Curriculum">
       <div class="section-content">
         <div class="curtain-top-row curriculum-row">
           <div class="curriculum-col">
@@ -286,7 +288,7 @@
               <div class="section-value-large" id="val-ricerche">
                 <a href="https://meme-things-first.github.io/MTF/" target="_blank" rel="noopener noreferrer"><em>Meme Things First&#8201;<span class="dash">—</span>&#8201;Design tra politica, educazione e memetica</em></a><br>
                 <em>Mimmo Castellano: furor graphicus</em><sup class="research-degree">Tesi magistrale</sup><br>
-                <em>Il caso studio del tipografo-editore Valdemaro Vecchi</em> <br class="title-break-desktop"><em>e la stampa a caratteri mobili nel progetto contemporaneo</em><sup class="research-degree">Tesi triennale</sup>
+                <em>Il caso studio del tipografo-editore Valdemaro Vecchi</em> <span class="title-break-desktop"><em>e la stampa a caratteri mobili nel progetto contemporaneo</em><sup class="research-degree">Tesi triennale</sup></span>
               </div>
             </div>
           </div>
@@ -294,7 +296,7 @@
       </div>
     </section>
 
-    <section class="stack-section stack-section--contact" aria-label="Contatti Diretti e Colophon">
+    <section class="stack-section stack-section--contact" data-i18n-aria="contact" aria-label="Contatti Diretti e Colophon">
       <div class="section-content section-content--curtain">
         <div class="curtain-top-row">
           <div class="info-block info-block--contact">
@@ -341,7 +343,7 @@
 
       <footer class="footer-bar footer-bar--colophon">
         <div class="curtain-colophon-grid">
-          <div class="colophon-col colophon-col--lang" role="group" aria-label="Selettore lingua">
+          <div class="colophon-col colophon-col--lang" role="group" data-i18n-aria="lang" aria-label="Selettore lingua">
             <button type="button" class="lang-btn" id="lang-btn-primary" data-target-lang="it">Italiano</button><span class="lang-separator" aria-hidden="true">&#8202;/&#8202;</span><button type="button" class="lang-btn" id="lang-btn-secondary" data-target-lang="en">Inglese</button>
           </div>
           <div class="colophon-col colophon-col--clock">
@@ -370,6 +372,7 @@
     id="index-curtain"
     aria-hidden="true"
     inert
+    data-i18n-aria="archive"
     aria-label="Archivio"
   >
     <div class="index-curtain__inner">
@@ -382,6 +385,7 @@
           <div class="index-meta__line" id="index-meta-per"></div>
           <div class="index-meta__line" id="index-meta-sup"></div>
           <div class="index-meta__line" id="index-meta-con"></div>
+          <div class="index-meta__line" id="index-meta-links"></div>
         </div>
       </div>
 
@@ -396,7 +400,7 @@
 
     <footer class="footer-bar footer-bar--colophon index-colophon">
       <div class="curtain-colophon-grid">
-        <div class="colophon-col colophon-col--lang" role="group" aria-label="Selettore lingua">
+        <div class="colophon-col colophon-col--lang" role="group" data-i18n-aria="lang" aria-label="Selettore lingua">
           <button type="button" class="lang-btn" id="index-lang-btn-primary" data-target-lang="it">Italiano</button><span class="lang-separator" aria-hidden="true">&#8202;/&#8202;</span><button type="button" class="lang-btn" id="index-lang-btn-secondary" data-target-lang="en">Inglese</button>
         </div>
         <div class="colophon-col colophon-col--clock">
@@ -477,6 +481,6 @@
     </figure>
   </div>
 
-  <script defer src="main.js?v=31d662ff8b"></script>
+  <script defer src="main.js?v=e329b90d95"></script>
 </body>
 </html>

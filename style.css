@@ -18,14 +18,19 @@
   --lh-base: clamp(20px, 1.4vw + 16px, 21px);
   --fs-small: clamp(11px, 0.4vw + 9px, 12px);
   --lh-small: clamp(13px, 0.35vw + 11px, 14px);
-
   --gap: clamp(8px, 0.5vw + 6px, 10px);
+  /* Inline gaps: archive nums / apex notes */
+  --lead: calc(var(--gap) / 2);
+  /* Hairline: label→value, archive list gaps (~gap/4) */
+  --hair: calc(var(--gap) / 4);
   /* Mobile about: space between brand name and first-line body */
   --gap-brand: calc(var(--gap) * 2);
+  /* Archive / 404 vertical list rhythm */
+  --index-list-gap: var(--hair);
 
   --fs-query: calc(var(--fs-base) * 8 / 1.875);
   --lh-query: 1.2;
-  --lh-row: calc(var(--fs-base) + 2px);
+  --lh-row: calc(var(--fs-base) + var(--hair));
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -329,7 +334,6 @@ video {
   line-height: var(--lh-base);
   margin: 0;
   max-width: 100%;
-  text-wrap: pretty;
 }
 
 .intro-lede {
@@ -373,19 +377,12 @@ video {
 .intro-text-start-small {
   margin: 0;
   max-width: 100%;
-  text-wrap: pretty;
 }
 
 .section-value-large,
 .section-value-large a,
 .section-value-large em {
   line-height: var(--lh-row);
-}
-
-/* Avoid orphan words on long school / research titles */
-#val-formazione,
-#val-ricerche {
-  text-wrap: pretty;
 }
 
 .research-degree {
@@ -395,8 +392,24 @@ video {
   font-style: normal;
   font-feature-settings: var(--font-features-case);
   line-height: 1;
-  margin-left: 0.2em;
+  margin-left: var(--lead);
   vertical-align: super;
+}
+
+/* Prefer balanced wraps on long titles / bios (browser support varies) */
+.intro-paragraph,
+.intro-text-start,
+.intro-paragraph-small,
+.intro-text-start-small,
+#val-formazione,
+#val-ricerche,
+.gallery-col--title,
+.gallery-col--per,
+.gallery-col--con,
+.index-result,
+.index-meta__line,
+.archive-cue {
+  text-wrap: pretty;
 }
 
 .colophon-col,
@@ -434,7 +447,7 @@ video {
 
 .section-label-small {
   display: block;
-  margin-bottom: 2px;
+  margin-bottom: var(--hair);
 }
 
 .lang-btn {
@@ -532,12 +545,6 @@ video {
   color: var(--color-black);
 }
 
-.gallery-col--title,
-.gallery-col--per,
-.gallery-col--con {
-  text-wrap: pretty;
-}
-
 @media (hover: hover) and (pointer: fine) {
   a:hover,
   a:hover em,
@@ -556,12 +563,12 @@ a:focus-visible i,
 }
 
 /* Soft line break only on desktop (research + archive titles) */
-br.title-break-desktop {
-  display: none;
+.title-break-desktop {
+  display: inline;
 }
 
 @media (min-width: 1000px) {
-  br.title-break-desktop {
+  .title-break-desktop {
     display: block;
   }
 
@@ -883,7 +890,6 @@ html.is-query-typing .query-text {
   font-weight: var(--font-weight);
   font-feature-settings: var(--font-features-case);
   color: var(--color-jasper);
-  text-wrap: pretty;
 }
 
 /* ——— Archive index (filter) ——— */
@@ -903,7 +909,6 @@ html.is-query-typing .query-text {
   content-visibility: hidden;
   display: flex;
   flex-direction: column;
-  --index-list-gap: 2px;
   --index-fade: calc(var(--fs-base) * 1.375 * 3);
   --index-rail: calc((100% - var(--gap)) / 2);
 }
@@ -962,7 +967,6 @@ html.is-index-open .site-gate {
 .index-meta__line {
   display: block;
   overflow-wrap: anywhere;
-  text-wrap: pretty;
 }
 
 .index-meta__line:empty {
@@ -1115,21 +1119,33 @@ html.is-index-open .site-gate {
   text-align: left;
   font-family: var(--font-sans);
   font-size: var(--fs-base);
-  line-height: normal;
+  line-height: var(--lh-base);
   font-weight: var(--font-weight);
   font-feature-settings: var(--font-features-case);
   font-style: italic;
   white-space: normal;
-  text-wrap: pretty;
   overflow-wrap: break-word;
   overflow: visible;
+}
+
+.index-result em,
+.index-result a {
+  font-style: inherit;
+  color: inherit;
+  line-height: inherit;
+}
+
+.index-result .title-break-desktop {
+  margin: 0;
+  padding: 0;
+  line-height: inherit;
 }
 
 .index-result .index-result__num {
   font-style: normal;
   font-variant-numeric: lining-nums tabular-nums;
   font-feature-settings: var(--font-features-tnum);
-  margin-right: 0.35em;
+  margin-right: var(--lead);
 }
 
 .index-result:hover,
@@ -1210,7 +1226,6 @@ html.is-error-page {
   flex-direction: column;
   background: var(--color-white);
   color: var(--color-black);
-  --index-list-gap: 2px;
 }
 
 /* Same middle flex band as .index-results, without rows */

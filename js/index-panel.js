@@ -3,6 +3,7 @@ import {
   indexLabels,
   TRANSLATIONS,
   projectTagsHtml,
+  projectLinksHtml,
   stripHtml,
   withDesktopTitleBreak
 } from "./i18n.js";
@@ -113,6 +114,8 @@ export function createIndexPanel({
   const metaPer = $("index-meta-per");
   const metaCon = $("index-meta-con");
   const metaSup = $("index-meta-sup");
+  const metaLinks = $("index-meta-links");
+  const metaLines = [metaYear, metaTags, metaPer, metaCon, metaSup, metaLinks];
   const gateQuery = $("site-gate-query");
   const siteGate = gateQuery?.closest(".site-gate") || $("site-gate");
   const cueRoots = [...document.querySelectorAll(".archive-cues")];
@@ -203,11 +206,9 @@ export function createIndexPanel({
   const hideMeta = () => {
     if (!metaRoot) return;
     metaRoot.hidden = true;
-    if (metaYear) metaYear.textContent = "";
-    if (metaTags) metaTags.innerHTML = "";
-    if (metaPer) metaPer.innerHTML = "";
-    if (metaCon) metaCon.textContent = "";
-    if (metaSup) metaSup.innerHTML = "";
+    for (const el of metaLines) {
+      if (el) el.textContent = "";
+    }
   };
 
   const clearSelection = () => {
@@ -333,6 +334,7 @@ export function createIndexPanel({
     const labels = indexLabels(lang()) || {};
     const collab = labels.collab || "Con";
     const supervision = labels.supervision || "Supervisione";
+    const linksHtml = projectLinksHtml(project.links, labels.link || "Link");
 
     if (metaYear) metaYear.innerHTML = wrapTnum(year);
     if (metaTags) metaTags.innerHTML = tagsHtml;
@@ -350,8 +352,17 @@ export function createIndexPanel({
     if (metaSup) {
       metaSup.innerHTML = supHtml ? `${supervision}: ${supHtml}` : "";
     }
+    if (metaLinks) metaLinks.innerHTML = linksHtml;
 
-    metaRoot.hidden = !(year || tagsHtml || perHtml || degree || con || supHtml);
+    metaRoot.hidden = !(
+      year ||
+      tagsHtml ||
+      perHtml ||
+      degree ||
+      con ||
+      supHtml ||
+      linksHtml
+    );
   };
 
   const setHover = (projectId) => {
@@ -515,7 +526,9 @@ export function createIndexPanel({
       el.dataset.project = entry.id;
       el.dataset.search = entry.search;
       el.tabIndex = 0;
-      const titleHtml = withDesktopTitleBreak(withDashSpans(entry.title));
+      const titleHtml = withDesktopTitleBreak(
+        entry.titleHtml || withDashSpans(entry.title)
+      );
       el.innerHTML = `<span class="index-result__num tnum">[${num}]</span>${titleHtml}`;
       state.resultNodes.push(el);
       state.resultById.set(entry.id, el);
@@ -535,10 +548,10 @@ export function createIndexPanel({
   };
 
   const scheduleFade = rafSchedule(syncResultsFade);
+  let hoveredResult = null;
   const scheduleHover = rafSchedule(() => {
-    const el = results.querySelector(".index-result:hover");
-    if (el && !el.hidden) {
-      setHover(el.dataset.project);
+    if (hoveredResult && !hoveredResult.hidden) {
+      setHover(hoveredResult.dataset.project);
       return;
     }
     if (state.overPreview) return;
@@ -594,6 +607,7 @@ export function createIndexPanel({
     state.resultNodes = [];
     state.resultById = new Map();
     state.activeEl = null;
+    hoveredResult = null;
   };
 
   const render = (code = lang()) => {
@@ -737,6 +751,16 @@ export function createIndexPanel({
   }
 
   results.addEventListener(
+    "pointerover",
+    (e) => {
+      const el = resultFromEvent(e);
+      if (!el || el.hidden) return;
+      hoveredResult = el;
+      setHover(el.dataset.project);
+    },
+    { passive: true }
+  );
+  results.addEventListener(
     "pointermove",
     (e) => {
       trackPointer(e);
@@ -746,6 +770,7 @@ export function createIndexPanel({
   );
   results.addEventListener("pointerleave", (e) => {
     trackPointer(e);
+    hoveredResult = null;
     if (state.overPreview) return;
     // Wide preview can sit under the cursor without firing pointerenter.
     if (pointerOverPreview(e.clientX, e.clientY)) {
@@ -756,13 +781,18 @@ export function createIndexPanel({
   });
   results.addEventListener("focusin", (e) => {
     const el = resultFromEvent(e);
-    if (el) setHover(el.dataset.project);
+    if (el) {
+      hoveredResult = el;
+      setHover(el.dataset.project);
+    }
   });
   results.addEventListener("focusout", (e) => {
     if (state.overPreview) return;
     const next = e.relatedTarget;
     if (next && results.contains(next)) return;
-    if (results.matches(":hover")) return;
+    // Pointer still over the list — pointer handlers own hover.
+    if (results.matches(":hover") && hoveredResult) return;
+    hoveredResult = null;
     if (pointerOverPreview()) {
       state.overPreview = true;
       return;
@@ -770,6 +800,7 @@ export function createIndexPanel({
     clearHover();
   });
   results.addEventListener("click", (e) => {
+    if (e.target.closest("a")) return;
     const el = resultFromEvent(e);
     if (el) selectProject(el.dataset.project);
   });
