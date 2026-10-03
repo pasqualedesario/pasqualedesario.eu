@@ -15,7 +15,8 @@ import {
   bindLangButtons,
   scrollToTop,
   tryCreate,
-  readLangParam
+  readLangParam,
+  writeLangUrl
 } from "./utils.js";
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
@@ -70,12 +71,7 @@ const languageListeners = [];
 const mobileMq = window.matchMedia(MQ.mobile);
 
 const writeUrl = ({ lang: nextLang = lang, archive = index?.isOpen() } = {}) => {
-  const url = new URL(location.href);
-  // Keep the default locale clean (`/` not `/?lang=it`).
-  if (nextLang === "it") url.searchParams.delete("lang");
-  else url.searchParams.set("lang", nextLang);
-  url.hash = archive ? ARCHIVE_HASH : "";
-  history.replaceState(null, "", url);
+  writeLangUrl(nextLang, { hash: archive ? ARCHIVE_HASH : "" });
 };
 
 /** Desktop: full bio. Mobile: short + optional expand. */
@@ -87,8 +83,9 @@ const syncAbout = (code = lang) => {
   if (dom.introStart) {
     dom.introStart.textContent = !mobile || expanded ? t.aboutFull : t.aboutShort;
   }
+  // Contact curtain bio stays full on every viewport.
   dom.introSmall?.forEach((el) => {
-    el.textContent = mobile ? t.aboutShort : t.aboutFull;
+    el.textContent = t.aboutFull;
   });
   if (dom.introExpand) {
     dom.introExpand.hidden = !mobile;
@@ -160,8 +157,7 @@ for (const link of dom.brandLinks) {
 dom.introExpand?.addEventListener("click", () => {
   aboutExpanded = !aboutExpanded;
   syncAbout();
-  // ResizeObserver also fires; double-rAF resnap waits for flex settle.
-  if (mobileMq.matches) carousel?.relayout?.();
+  carousel?.relayout();
 });
 
 onMediaChange(mobileMq, () => {

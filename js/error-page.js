@@ -6,6 +6,7 @@ import {
   scrollbarWidth,
   setScrollbarComp,
   readLangParam,
+  writeLangUrl,
   configureLangButton,
   bindQueryFace
 } from "./utils.js";
@@ -24,10 +25,7 @@ const LANG_UI = Object.freeze({
   }
 });
 
-const langText = (el, code) => {
-  if (!el) return "";
-  return el.getAttribute(`data-${code}`) || "";
-};
+const langText = (el, code) => el?.getAttribute(`data-${code}`) || "";
 
 const heading = $("error-heading");
 const homeLink = $("error-home-link");
@@ -39,13 +37,6 @@ const code = $("error-code");
 let lang =
   readLangParam() ||
   (document.documentElement.lang === "en" ? "en" : "it");
-
-const writeUrl = (next) => {
-  const url = new URL(location.href);
-  if (next === "it") url.searchParams.delete("lang");
-  else url.searchParams.set("lang", next);
-  history.replaceState(null, "", url);
-};
 
 const applyLanguage = (next) => {
   if (next !== "it" && next !== "en") return;
@@ -64,7 +55,7 @@ const applyLanguage = (next) => {
   const ui = LANG_UI[next];
   configureLangButton(langPrimary, ui.primary);
   configureLangButton(langSecondary, ui.secondary);
-  writeUrl(next);
+  writeLangUrl(next);
 };
 
 bindQueryFace(code);

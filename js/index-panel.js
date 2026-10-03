@@ -3,7 +3,8 @@ import {
   indexLabels,
   TRANSLATIONS,
   projectTagsHtml,
-  stripHtml
+  stripHtml,
+  withDesktopTitleBreak
 } from "./i18n.js";
 import {
   $,
@@ -114,6 +115,21 @@ export function createIndexPanel({
   const metaSup = $("index-meta-sup");
   const gateQuery = $("site-gate-query");
   const siteGate = gateQuery?.closest(".site-gate") || $("site-gate");
+  const cueRoots = [...document.querySelectorAll(".archive-cues")];
+  const cueDesktop = [...document.querySelectorAll("[data-archive-cue]")];
+  const cueMobile = [...document.querySelectorAll("[data-archive-cue-mobile]")];
+  const contactSection = document.querySelector(".stack-section--contact");
+  const aboutRow = contactSection?.querySelector(".curtain-about-row");
+  const colophonBar = contactSection?.querySelector(".footer-bar--colophon");
+  const emailBlock = contactSection?.querySelector(".info-block--contact");
+  const platformsBlock = contactSection?.querySelector(".info-block--platforms");
+  const desktopAboutBand = contactSection?.querySelector(
+    ".archive-cues--desktop.archive-cues--band-about"
+  );
+  const mobileEmailBand = contactSection?.querySelector(".archive-cues--band-email");
+  const mobileAboutBand = contactSection?.querySelector(
+    ".archive-cues--mobile.archive-cues--band-about"
+  );
   if (!curtain || !results || !queryEl) return null;
 
   bindQueryFace(queryEl, gateQuery);
@@ -134,6 +150,8 @@ export function createIndexPanel({
     query: "",
     gate: "",
     cueReady: false,
+    minuteReady: false,
+    scrolledEnd: false,
     mediaByProject: null,
     selected: [],
     hoverId: null,
@@ -309,6 +327,7 @@ export function createIndexPanel({
     const year = stripHtml(project.year);
     const tagsHtml = projectTagsHtml(project.tags, lang());
     const perHtml = String(project.per || "").trim();
+    const degree = stripHtml(project.degree);
     const con = stripHtml(project.con);
     const supHtml = String(project.sup || "").trim();
     const labels = indexLabels(lang()) || {};
@@ -318,19 +337,21 @@ export function createIndexPanel({
     if (metaYear) metaYear.innerHTML = wrapTnum(year);
     if (metaTags) metaTags.innerHTML = tagsHtml;
     if (metaPer) {
-      metaPer.innerHTML = perHtml
+      const atLines = perHtml
         ? perHtml
             .split(/<br\s*\/?>/i)
             .map((part, i) => (i === 0 ? `@${part}` : part))
             .join("<br>")
         : "";
+      metaPer.innerHTML =
+        degree && atLines ? `${degree} ${atLines}` : degree || atLines;
     }
     if (metaCon) metaCon.textContent = con ? `${collab}: ${con}` : "";
     if (metaSup) {
       metaSup.innerHTML = supHtml ? `${supervision}: ${supHtml}` : "";
     }
 
-    metaRoot.hidden = !(year || tagsHtml || perHtml || con || supHtml);
+    metaRoot.hidden = !(year || tagsHtml || perHtml || degree || con || supHtml);
   };
 
   const setHover = (projectId) => {
@@ -356,14 +377,15 @@ export function createIndexPanel({
 
   const activeQueryEl = () => {
     if (state.open) return queryEl;
-    if (!state.mobile && (state.cueReady || state.gate)) return gateQuery;
+    // Desktop gate typing is always available; cues are only a visual hint.
+    if (!state.mobile) return gateQuery;
     return null;
   };
 
   const activeQueryValue = () => (state.open ? state.query : state.gate);
 
   const isQueryTyping = () =>
-    state.open || (!state.mobile && (state.cueReady || Boolean(state.gate)));
+    state.open || (!state.mobile && Boolean(state.gate));
 
   const syncTypingClass = () => setQueryTyping(isQueryTyping(), html);
 
@@ -374,12 +396,89 @@ export function createIndexPanel({
 
   const syncArchiveQueryDisplay = () => paint(queryEl, state.open, state.query);
 
+  const syncCueCopy = (code = lang()) => {
+    const t = TRANSLATIONS[code];
+    const desktop = t?.archiveCueDesktop || "";
+    const mobile = t?.archiveCueMobile || "";
+    for (const el of cueDesktop) {
+      if (el.textContent !== desktop) el.textContent = desktop;
+    }
+    for (const el of cueMobile) {
+      if (el.textContent !== mobile) el.textContent = mobile;
+    }
+  };
+
+  const clearBand = (el) => {
+    if (!el) return;
+    el.style.top = "";
+    el.style.bottom = "";
+  };
+
+  /** Absolute cue band between two elements inside the contact section. */
+  const placeBand = (el, above, below, sec) => {
+    if (!el || !above || !below) {
+      clearBand(el);
+      return;
+    }
+    const a = above.getBoundingClientRect();
+    const b = below.getBoundingClientRect();
+    el.style.top = `${Math.max(0, a.bottom - sec.top)}px`;
+    el.style.bottom = `${Math.max(0, sec.bottom - b.top)}px`;
+  };
+
+  /** Position cue overlays without touching about / colophon flow. */
+  const layoutCueBands = () => {
+    if (!contactSection) return;
+    const sec = contactSection.getBoundingClientRect();
+    if (state.mobile) {
+      clearBand(desktopAboutBand);
+      placeBand(mobileEmailBand, emailBlock, platformsBlock, sec);
+      placeBand(mobileAboutBand, aboutRow, colophonBar, sec);
+      return;
+    }
+    clearBand(mobileEmailBand);
+    clearBand(mobileAboutBand);
+    placeBand(desktopAboutBand, aboutRow, colophonBar, sec);
+  };
+
+  const syncCueVisibility = () => {
+    // Hints only — hide while typing into the gate or when archive is open.
+    const show = state.cueReady && !state.open && !state.gate;
+    html.classList.toggle("is-archive-cue-visible", show);
+    for (const root of cueRoots) {
+      root.hidden = !show;
+      root.setAttribute("aria-hidden", show ? "false" : "true");
+    }
+    if (show) layoutCueBands();
+  };
+
+  const refreshCueReady = () => {
+    const next = state.minuteReady && state.scrolledEnd;
+    if (state.cueReady === next) return;
+    state.cueReady = next;
+    // syncGateDisplay → syncCueVisibility (layout once when cues appear).
+    syncGateDisplay();
+  };
+
+  const checkScrolledEnd = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    return max <= 4 || window.scrollY >= max - 8;
+  };
+
+  const onScrollCue = rafSchedule(() => {
+    if (state.scrolledEnd) return;
+    if (!checkScrolledEnd()) return;
+    state.scrolledEnd = true;
+    refreshCueReady();
+  });
+
   const syncGateDisplay = () => {
-    const show =
-      !state.open && !state.mobile && (state.cueReady || Boolean(state.gate));
+    // No empty caret: show the gate surface only while typing a keyword.
+    const show = !state.open && !state.mobile && Boolean(state.gate);
     paint(gateQuery, show, state.gate);
     if (siteGate) siteGate.setAttribute("aria-hidden", show ? "false" : "true");
     syncTypingClass();
+    syncCueVisibility();
   };
 
   const setGate = (next) => {
@@ -416,7 +515,8 @@ export function createIndexPanel({
       el.dataset.project = entry.id;
       el.dataset.search = entry.search;
       el.tabIndex = 0;
-      el.innerHTML = `<span class="index-result__num tnum">[${num}]</span>${withDashSpans(entry.title)}`;
+      const titleHtml = withDesktopTitleBreak(withDashSpans(entry.title));
+      el.innerHTML = `<span class="index-result__num tnum">[${num}]</span>${titleHtml}`;
       state.resultNodes.push(el);
       state.resultById.set(entry.id, el);
       frag.appendChild(el);
@@ -509,8 +609,10 @@ export function createIndexPanel({
       clearResults();
     }
     syncColophon(code);
+    syncCueCopy(code);
     setAriaLabels();
     if (state.open) applyFilter();
+    syncCueVisibility();
   };
 
   const setOpen = (open) => {
@@ -697,13 +799,28 @@ export function createIndexPanel({
   curtain.addEventListener("click", onCurtainClick);
   onMediaChange(mobileMq, onMobileChange);
 
+  window.addEventListener("scroll", onScrollCue, { passive: true });
+  window.addEventListener(
+    "resize",
+    rafSchedule(() => {
+      if (!state.scrolledEnd && checkScrolledEnd()) {
+        state.scrolledEnd = true;
+        refreshCueReady();
+      }
+      if (html.classList.contains("is-archive-cue-visible")) layoutCueBands();
+    }),
+    { passive: true }
+  );
+
   window.setTimeout(() => {
-    state.cueReady = true;
-    syncGateDisplay();
+    state.minuteReady = true;
+    if (!state.scrolledEnd && checkScrolledEnd()) state.scrolledEnd = true;
+    refreshCueReady();
   }, HINT_DELAY_MS);
 
   onMobileChange();
   render();
+  if (checkScrolledEnd()) state.scrolledEnd = true;
   onLanguageBound?.((code) => render(code));
 
   return {

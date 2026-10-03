@@ -68,7 +68,8 @@ def build_bundle(order: tuple[str, ...], label: str) -> str:
         path = ROOT / "js" / name
         if not path.is_file():
             raise FileNotFoundError(f"missing source: {path}")
-        parts.append(strip_module(path.read_text()))
+        # Normalise newlines so --check is stable across editors.
+        parts.append(strip_module(path.read_text(encoding="utf-8").replace("\r\n", "\n")))
 
     bundle = (
         f"/*! Pasquale de Sario — {label} from js/*.js */\n"
@@ -99,7 +100,7 @@ def short_hash(path: Path) -> str:
 def stamp_html(path: Path, *, css_hash: str, script: str, js_hash: str) -> None:
     if not path.is_file():
         return
-    html = path.read_text()
+    html = path.read_text(encoding="utf-8")
     html = re.sub(
         r'href="style\.css(?:\?v=[^"]*)?"',
         f'href="style.css?v={css_hash}"',
@@ -112,7 +113,7 @@ def stamp_html(path: Path, *, css_hash: str, script: str, js_hash: str) -> None:
         html,
         count=1,
     )
-    path.write_text(html)
+    path.write_text(html, encoding="utf-8")
 
 
 def main() -> int:
@@ -138,7 +139,9 @@ def main() -> int:
     if args.check:
         stale = False
         for spec, bundle in built:
-            current = spec["out"].read_text() if spec["out"].is_file() else ""
+            current = (
+                spec["out"].read_text(encoding="utf-8") if spec["out"].is_file() else ""
+            )
             if current != bundle:
                 print(
                     f"{spec['out'].name} is out of date — run: python3 scripts/build.py",
@@ -151,7 +154,7 @@ def main() -> int:
         return 0
 
     for spec, bundle in built:
-        spec["out"].write_text(bundle)
+        spec["out"].write_text(bundle, encoding="utf-8")
         print(f"{spec['out'].name} → {len(bundle):,} bytes")
 
     if not args.no_stamp:

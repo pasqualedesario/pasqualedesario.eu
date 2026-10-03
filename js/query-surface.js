@@ -29,10 +29,12 @@ export const paintQuerySurface = (el, { show, text, reduceMotion = false }) => {
   el.toggleAttribute("aria-hidden", !show);
   if (!show) {
     el.classList.remove("is-caret-blink");
+    el.replaceChildren();
     return;
   }
   if (!text) {
     el.classList.toggle("is-caret-blink", !reduceMotion);
+    if (el.firstElementChild?.classList.contains("query-caret")) return;
     el.replaceChildren();
     const caret = document.createElement("span");
     caret.className = "query-caret";

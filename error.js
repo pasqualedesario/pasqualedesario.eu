@@ -19,6 +19,15 @@ const readLangParam = () => {
   return v === "en" || v === "it" ? v : null;
 };
 
+/** Keep default locale clean (`/` not `/?lang=it`). Optional hash (e.g. archive). */
+const writeLangUrl = (lang, { hash = null } = {}) => {
+  const url = new URL(location.href);
+  if (lang === "it") url.searchParams.delete("lang");
+  else url.searchParams.set("lang", lang);
+  if (hash != null) url.hash = hash;
+  history.replaceState(null, "", url);
+};
+
 /** Wire a language toggle button from `{ text, target }`. */
 const configureLangButton = (btn, cfg) => {
   if (!btn || !cfg) return;
@@ -45,15 +54,17 @@ const bindQueryFace = (...els) => {
   }
 };
 
-/** Classic scrollbar width (0 with overlay scrollbars). */
+/** Classic scrollbar width (0 with overlay scrollbars). Measured once. */
+let _sbw;
 const scrollbarWidth = () => {
+  if (_sbw != null) return _sbw;
   const outer = document.createElement("div");
   outer.style.cssText =
     "visibility:hidden;overflow:scroll;position:absolute;top:0;left:0;width:100px;height:100px";
   document.body.appendChild(outer);
-  const w = outer.offsetWidth - outer.clientWidth;
+  _sbw = outer.offsetWidth - outer.clientWidth;
   outer.remove();
-  return w;
+  return _sbw;
 };
 
 /** Keep fixed archive/404 frame aligned with in-flow home columns. */
@@ -115,17 +126,40 @@ const pauseVideos = (root) => {
   });
 };
 
-/** Defer non-critical work past first paint / interaction. */
+/** Fisher–Yates shuffle; mutates and returns the array. */
+const shuffleInPlace = (items) => {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+};
+
+/**
+ * Defer non-critical work past first paint / interaction.
+ * Prefer requestIdleCallback (bounded); fall back to postTask + hard timeout.
+ */
 const whenIdle = (fn, timeout = 2500) => {
-  if (typeof scheduler?.postTask === "function") {
-    scheduler.postTask(fn, { priority: "background", delay: 0 }).catch(() => fn());
-    return;
-  }
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    fn();
+  };
+
   if (typeof requestIdleCallback === "function") {
-    requestIdleCallback(() => fn(), { timeout });
+    requestIdleCallback(run, { timeout });
     return;
   }
-  window.setTimeout(fn, 1);
+  // Avoid delay:0 during carousel boot — give the main thread a short breath.
+  if (typeof scheduler?.postTask === "function") {
+    scheduler
+      .postTask(run, { priority: "background", delay: 400 })
+      .catch(run);
+  } else {
+    window.setTimeout(run, 1);
+  }
+  window.setTimeout(run, timeout);
 };
 
 const scrollToTop = (behavior = "smooth") => {
@@ -179,23 +213,21 @@ const datePartsFmt = new Intl.DateTimeFormat("en-GB", {
   year: "numeric"
 });
 
-function formatClock(date = new Date()) {
-  return wrapTnum(timeFmt.format(date));
-}
+const formatClock = (date = new Date()) => wrapTnum(timeFmt.format(date));
 
 /** Always XX.XX.XXXX (Europe/Rome); digits tabular, dots proportional. */
-function formatDate(date = new Date()) {
+const formatDate = (date = new Date()) => {
   const parts = datePartsFmt.formatToParts(date);
   let d = "";
   let m = "";
   let y = "";
-  for (const part of parts) {
-    if (part.type === "day") d = part.value;
-    else if (part.type === "month") m = part.value;
-    else if (part.type === "year") y = part.value;
+  for (const { type, value } of parts) {
+    if (type === "day") d = value;
+    else if (type === "month") m = value;
+    else if (type === "year") y = value;
   }
   return d && m && y ? wrapTnum(`${d}.${m}.${y}`) : "";
-}
+};
 
 /**
  * 1 Hz clock + calendar date for one or more element ids.
@@ -280,10 +312,8 @@ async function fetchTerlizziWeather(targets) {
   }
 
   try {
-    const res = await fetch(WEATHER_URL, {
-      signal,
-      headers: { Accept: "application/json" }
-    });
+    // No custom headers → simple CORS request (avoids preflight on mobile networks).
+    const res = await fetch(WEATHER_URL, { signal });
     if (!res.ok) return;
     const data = await res.json();
     const n = data?.current?.temperature_2m;
@@ -319,10 +349,7 @@ const LANG_UI = Object.freeze({
   }
 });
 
-const langText = (el, code) => {
-  if (!el) return "";
-  return el.getAttribute(`data-${code}`) || "";
-};
+const langText = (el, code) => el?.getAttribute(`data-${code}`) || "";
 
 const heading = $("error-heading");
 const homeLink = $("error-home-link");
@@ -334,13 +361,6 @@ const code = $("error-code");
 let lang =
   readLangParam() ||
   (document.documentElement.lang === "en" ? "en" : "it");
-
-const writeUrl = (next) => {
-  const url = new URL(location.href);
-  if (next === "it") url.searchParams.delete("lang");
-  else url.searchParams.set("lang", next);
-  history.replaceState(null, "", url);
-};
 
 const applyLanguage = (next) => {
   if (next !== "it" && next !== "en") return;
@@ -359,7 +379,7 @@ const applyLanguage = (next) => {
   const ui = LANG_UI[next];
   configureLangButton(langPrimary, ui.primary);
   configureLangButton(langSecondary, ui.secondary);
-  writeUrl(next);
+  writeLangUrl(next);
 };
 
 bindQueryFace(code);

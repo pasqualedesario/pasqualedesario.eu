@@ -51,8 +51,7 @@
   <meta name="twitter:image:alt" content="Pasquale de Sario">
 
   <link rel="preload" href="assets/fonts/ABCMonumentGrotesk-Heavy.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="assets/media/PF2026-01.webp" as="image" type="image/webp" fetchpriority="high">
-  <link rel="stylesheet" href="style.css?v=1f390ea12a">
+  <link rel="stylesheet" href="style.css?v=a52ae2cc41">
 
   <script type="application/ld+json">
   {
@@ -141,7 +140,7 @@
 
         <div class="inline-carousel" aria-label="Galleria progetti" tabindex="0">
           <figure class="carousel-slide" data-project="pf">
-            <img src="assets/media/PF2026-01.webp" alt="Pergine Festival 2026" width="1400" height="1782" loading="eager" fetchpriority="high" decoding="async" class="carousel-item">
+            <img src="assets/media/PF2026-01.webp" alt="Pergine Festival 2026" width="1400" height="1782" loading="lazy" decoding="async" class="carousel-item">
           </figure>
           <figure class="carousel-slide" data-project="pf">
             <video class="carousel-item" width="1440" height="2560" muted loop playsinline preload="none" aria-label="Pergine Festival 2026">
@@ -269,8 +268,8 @@
             <div class="info-block">
               <h2 class="section-label-small" id="label-formazione">Formazione</h2>
               <div class="section-value-large" id="val-formazione">
-                Design della comunicazione @<a href="https://www.iuav.it" target="_blank" rel="noopener noreferrer">Università Iuav di Venezia</a><br>
-                Disegno industriale @<a href="https://www.poliba.it/" target="_blank" rel="noopener noreferrer">Politecnico di Bari</a>
+                Design della comunicazione @<a href="https://www.iuav.it" target="_blank" rel="noopener noreferrer">Università Iuav&nbsp;di&nbsp;Venezia</a><br>
+                Disegno industriale @<a href="https://www.poliba.it/" target="_blank" rel="noopener noreferrer">Politecnico&nbsp;di&nbsp;Bari</a>
               </div>
             </div>
 
@@ -286,7 +285,8 @@
               <h2 class="section-label-small" id="label-ricerche">Ricerca</h2>
               <div class="section-value-large" id="val-ricerche">
                 <a href="https://meme-things-first.github.io/MTF/" target="_blank" rel="noopener noreferrer"><em>Meme Things First&#8201;<span class="dash">—</span>&#8201;Design tra politica, educazione e memetica</em></a><br>
-                <a href="https://assembramenti.net/meridiani/" target="_blank" rel="noopener noreferrer"><em>Assembramenti. Meridiani.</em></a>
+                <em>Mimmo Castellano: furor graphicus</em><sup class="research-degree">Tesi magistrale</sup><br>
+                <em>Il caso studio del tipografo-editore Valdemaro Vecchi</em> <br class="title-break-desktop"><em>e la stampa a caratteri mobili nel progetto contemporaneo</em><sup class="research-degree">Tesi triennale</sup>
               </div>
             </div>
           </div>
@@ -318,9 +318,25 @@
 
         <div class="curtain-about-row">
           <p class="intro-paragraph-small">
-            <a href="#top" class="brand-name">Pasquale de Sario</a><span class="intro-text-start-small">Designer e art director di base in Puglia.</span>
+            <a href="#top" class="brand-name">Pasquale de Sario</a><span class="intro-text-start-small">Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.</span>
           </p>
         </div>
+      </div>
+
+      <!-- Absolute cue bands (JS sets top/bottom) — out of document flow -->
+      <div class="archive-cues archive-cues--desktop archive-cues--band-about" hidden aria-hidden="true">
+        <div class="archive-cues__rail">
+          <p class="archive-cue" data-archive-cue></p>
+          <p class="archive-cue" data-archive-cue></p>
+          <p class="archive-cue" data-archive-cue></p>
+          <p class="archive-cue" data-archive-cue></p>
+        </div>
+      </div>
+      <div class="archive-cues archive-cues--mobile archive-cues--band-email" hidden aria-hidden="true">
+        <p class="archive-cue" data-archive-cue-mobile></p>
+      </div>
+      <div class="archive-cues archive-cues--mobile archive-cues--band-about" hidden aria-hidden="true">
+        <p class="archive-cue" data-archive-cue-mobile></p>
       </div>
 
       <footer class="footer-bar footer-bar--colophon">
@@ -461,6 +477,6 @@
     </figure>
   </div>
 
-  <script defer src="main.js?v=23ef4473cb"></script>
+  <script defer src="main.js?v=d08bfb637b"></script>
 </body>
 </html>

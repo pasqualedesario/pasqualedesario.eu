@@ -20,6 +20,8 @@
   --lh-small: clamp(13px, 0.35vw + 11px, 14px);
 
   --gap: clamp(8px, 0.5vw + 6px, 10px);
+  /* Mobile about: space between brand name and first-line body */
+  --gap-brand: calc(var(--gap) * 2);
 
   --fs-query: calc(var(--fs-base) * 8 / 1.875);
   --lh-query: 1.2;
@@ -176,6 +178,8 @@ video {
 
 .stack-section--white {
   z-index: 1;
+  display: flex;
+  flex-direction: column;
   background: var(--color-white);
 }
 
@@ -368,6 +372,7 @@ video {
 .intro-paragraph-small,
 .intro-text-start-small {
   margin: 0;
+  max-width: 100%;
   text-wrap: pretty;
 }
 
@@ -375,6 +380,23 @@ video {
 .section-value-large a,
 .section-value-large em {
   line-height: var(--lh-row);
+}
+
+/* Avoid orphan words on long school / research titles */
+#val-formazione,
+#val-ricerche {
+  text-wrap: pretty;
+}
+
+.research-degree {
+  font-family: var(--font-sans);
+  font-size: 0.55em;
+  font-weight: var(--font-weight);
+  font-style: normal;
+  font-feature-settings: var(--font-features-case);
+  line-height: 1;
+  margin-left: 0.2em;
+  vertical-align: super;
 }
 
 .colophon-col,
@@ -533,7 +555,16 @@ a:focus-visible i,
   outline: none;
 }
 
+/* Soft line break only on desktop (research + archive titles) */
+br.title-break-desktop {
+  display: none;
+}
+
 @media (min-width: 1000px) {
+  br.title-break-desktop {
+    display: block;
+  }
+
   .curtain-about-row {
     position: absolute;
     top: 50%;
@@ -550,6 +581,10 @@ a:focus-visible i,
     width: calc((100% - 3 * var(--gap)) / 4);
     margin-right: var(--gap);
   }
+
+  html.is-archive-cue-visible:not(.is-index-open) .archive-cues--desktop {
+    display: flex;
+  }
 }
 
 @media (max-width: 999px) {
@@ -557,10 +592,13 @@ a:focus-visible i,
     display: block;
   }
 
-  .stack-section--white .intro-paragraph .brand-name {
-    display: block;
+  /* First-line hang (same as desktop): name inline, body continues beside it */
+  .intro-paragraph .brand-name,
+  .intro-paragraph-small .brand-name {
+    display: inline-block;
+    vertical-align: baseline;
     width: auto;
-    margin-right: 0;
+    margin-right: var(--gap-brand);
   }
 
   /* One sticky screen: bio (+ expand) + max gallery + project footer */
@@ -613,6 +651,11 @@ a:focus-visible i,
     content-visibility: visible;
   }
 
+  /*
+   * Lift contact / platforms / about into the section flex so space-between
+   * places about at the midpoint between platforms (GitHub) and colophon.
+   * Cue bands stay absolute and sit in the resulting gaps.
+   */
   .stack-section--contact .section-content--curtain,
   .stack-section--contact .curtain-top-row {
     display: contents;
@@ -622,16 +665,21 @@ a:focus-visible i,
   .stack-section--contact .info-block--platforms,
   .stack-section--contact .curtain-about-row,
   .stack-section--contact .footer-bar--colophon {
+    position: relative;
     margin: 0;
     padding: 0;
     width: 100%;
+    max-width: 100%;
+    flex: 0 0 auto;
     display: block;
     background: transparent;
   }
 
   .stack-section--contact .curtain-about-row {
     position: static;
+    top: auto;
     left: auto;
+    width: 100%;
     transform: none;
   }
 
@@ -687,6 +735,17 @@ a:focus-visible i,
   .index-curtain {
     display: none !important;
     pointer-events: none !important;
+  }
+
+  html.is-archive-cue-visible:not(.is-index-open) .archive-cues--desktop {
+    display: none;
+  }
+
+  html.is-archive-cue-visible:not(.is-index-open) .archive-cues--mobile {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-inline: var(--gap);
   }
 }
 
@@ -791,6 +850,40 @@ html.is-query-typing .query-text {
   inset: 0;
   padding: var(--gap);
   color: var(--color-jasper);
+}
+
+/* Archive discovery cues — absolute bands (never shift about / colophon flow) */
+.archive-cues {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  pointer-events: none;
+  display: none;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.archive-cues__rail {
+  display: grid;
+  grid-template-columns: repeat(4, calc((100% - 3 * var(--gap)) / 4));
+  column-gap: var(--gap);
+  align-items: center;
+  width: 100%;
+  padding-inline: var(--gap);
+  box-sizing: border-box;
+}
+
+.archive-cue {
+  margin: 0;
+  max-width: 100%;
+  font-family: var(--font-sans);
+  font-size: var(--fs-small);
+  line-height: var(--lh-small);
+  font-weight: var(--font-weight);
+  font-feature-settings: var(--font-features-case);
+  color: var(--color-jasper);
+  text-wrap: pretty;
 }
 
 /* ——— Archive index (filter) ——— */

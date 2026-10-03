@@ -4,10 +4,19 @@ import { configureLangButton } from "./utils.js";
 
 const THIN = "\u2009";
 const HAIR = "\u200A";
+const NBSP = "\u00A0";
 const PLUS = `${HAIR}<span class="plus">+</span>${HAIR}`;
 const EM = `${THIN}<span class="dash">\u2014</span>${THIN}`;
 const EN = "\u2013";
 export const SLASH = `${HAIR}/${HAIR}`;
+
+/** Keep school-name tails together (text-wrap:pretty is incomplete in links). */
+const SCHOOL = Object.freeze({
+  iuavIt: `Università Iuav${NBSP}di${NBSP}Venezia`,
+  polibaIt: `Politecnico${NBSP}di${NBSP}Bari`,
+  iuavEn: `Iuav University${NBSP}of${NBSP}Venice`,
+  polibaEn: `Polytechnic${NBSP}of${NBSP}Bari`
+});
 
 const ext = (href, html) =>
   `<a href="${href}" target="_blank" rel="noopener noreferrer">${html}</a>`;
@@ -17,7 +26,6 @@ const colophonLines = (...lines) =>
 
 const HREF = Object.freeze({
   mtf: "https://meme-things-first.github.io/MTF/",
-  meridiani: "https://assembramenti.net/meridiani/",
   iuav: "https://www.iuav.it",
   poliba: "https://www.poliba.it/",
   bruno: "https://www.b-r-u-n-o.it/",
@@ -35,9 +43,58 @@ const em = (html) => `<em>${html}</em>`;
 const BRUNO_SUP = `${ext(HREF.bruno, "bruno")} (Andrea Codolo &amp; Giacomo Covacich)`;
 const linked = (href, html) => ext(href, em(html));
 
+/** Apex degree note after a research title in the curtain. */
+const degreeNote = (label) =>
+  `<sup class="research-degree">${label}</sup>`;
+
 const MTF = Object.freeze({
   it: `Meme Things First${EM}Design tra politica, educazione e memetica`,
   en: `Meme Things First${EM}Design between politics, education and memetics`
+});
+
+const MC_TITLE = "Mimmo Castellano: furor graphicus";
+/** Desktop soft break after IT name / EN colon; degree note ends the title. */
+const VECCHI = Object.freeze({
+  it: Object.freeze({
+    head: "Il caso studio del tipografo-editore Valdemaro Vecchi",
+    tail: "e la stampa a caratteri mobili nel progetto contemporaneo"
+  }),
+  en: Object.freeze({
+    head: "Typographer-Publisher Valdemaro Vecchi:",
+    tail: "A Case Study on Movable Type in Contemporary Design"
+  })
+});
+const BR_DESKTOP = '<br class="title-break-desktop">';
+/** Space before break so mobile (br hidden) still separates the two halves. */
+const vecchiTitleEm = (lang) => {
+  const { head, tail } = VECCHI[lang] || VECCHI.it;
+  return em(`${head} ${BR_DESKTOP}${tail}`);
+};
+const vecchiResearchLine = (lang, bachelorLabel) => {
+  const { head, tail } = VECCHI[lang] || VECCHI.it;
+  return `${em(head)} ${BR_DESKTOP}${em(tail)}${degreeNote(bachelorLabel)}`;
+};
+
+/** Re-inject desktop soft-break after plain-text archive titles (HTML stripped). */
+export const withDesktopTitleBreak = (html) =>
+  String(html || "").replace(/(Valdemaro Vecchi:?)\s+/, `$1 ${BR_DESKTOP}`);
+
+const DEGREE = Object.freeze({
+  master: Object.freeze({ it: "Tesi magistrale", en: "MA Thesis" }),
+  bachelor: Object.freeze({ it: "Tesi triennale", en: "BA Thesis" })
+});
+
+const RESEARCH_LINES = Object.freeze({
+  it: [
+    ext(HREF.mtf, em(MTF.it)),
+    `${em(MC_TITLE)}${degreeNote(DEGREE.master.it)}`,
+    vecchiResearchLine("it", DEGREE.bachelor.it)
+  ].join("<br>"),
+  en: [
+    ext(HREF.mtf, em(MTF.en)),
+    `${em(MC_TITLE)}${degreeNote(DEGREE.master.en)}`,
+    vecchiResearchLine("en", DEGREE.bachelor.en)
+  ].join("<br>")
 });
 
 /** Servizi curtain = SERVICE_IDS only. Archive tags may also use extras below. */
@@ -102,7 +159,7 @@ const SHARED = Object.freeze({
   serviziIt: serviziList("it")
 });
 
-/** Project catalog for a locale (`con` | `with`). Fields: year, title, per, con, sup, tags. */
+/** Project catalog for a locale (`con` | `with`). Fields: year, title, per, degree, con, sup, tags. */
 function projects(collab) {
   const it = collab === "con";
 
@@ -132,11 +189,21 @@ function projects(collab) {
     },
     mc: {
       year: "2025",
-      title: em("Mimmo Castellano: furor graphicus"),
+      title: em(MC_TITLE),
       per: "Iuav",
+      degree: it ? DEGREE.master.it : DEGREE.master.en,
       con: "",
       sup: "Monica Pastore, Fiorella Bulegato",
       tags: ["publishing", "research"]
+    },
+    vv: {
+      year: "2023",
+      title: vecchiTitleEm(it ? "it" : "en"),
+      per: "PoliBa",
+      degree: it ? DEGREE.bachelor.it : DEGREE.bachelor.en,
+      con: "",
+      sup: "Antonio Labalestra, Marco Pietrosante",
+      tags: ["research", "publishing"]
     },
     sm: {
       year: "2024",
@@ -302,16 +369,20 @@ export const TRANSLATIONS = Object.freeze({
       "Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.",
     aboutExpand: "Espandi",
     aboutCollapse: "Comprimi",
+    archiveCueDesktop:
+      "Scrivi archivio e premi ↙ invio per visualizzare l’archivio completo",
+    archiveCueMobile:
+      "Esplora l’archivio completo sul sito desktop",
     projects: projects("con"),
     curtain: {
       serviziLabel: "Servizi",
       serviziValue: SHARED.serviziIt,
       formazioneLabel: "Formazione",
-      formazioneValue: `Design della comunicazione @${ext(HREF.iuav, "Università Iuav di Venezia")}<br>Disegno industriale @${ext(HREF.poliba, "Politecnico di Bari")}`,
+      formazioneValue: `Design della comunicazione @${ext(HREF.iuav, SCHOOL.iuavIt)}<br>Disegno industriale @${ext(HREF.poliba, SCHOOL.polibaIt)}`,
       esperienzaLabel: "Esperienza",
       esperienzaValue: SHARED.esperienza,
       ricercheLabel: "Ricerca",
-      ricercheValue: `${ext(HREF.mtf, em(MTF.it))}<br>${linked(HREF.meridiani, "Assembramenti. Meridiani.")}`,
+      ricercheValue: RESEARCH_LINES.it,
       contactLabel: "Per progetti, collaborazioni e ulteriori info",
       piattaformeLabel: "Piattaforme",
       colophonCredit: SHARED.credit,
@@ -329,24 +400,28 @@ export const TRANSLATIONS = Object.freeze({
     indexLabels: {
       title: "Archive",
       collab: "With",
-      supervision: "Supervision"
+      supervision: "Tutoring"
     },
     aboutShort:
       "Designer and art director based in Puglia, Italy.",
     aboutFull:
       "Designer and art director based in Puglia, Italy. His practice explores typography, publishing, information and web design and all the ways they interpolate each other within and without visual systems. His approach mixes curiosity and control, focusing equally on process and execution for the development of visual identities and digital spaces for brands, institutions and private clients. His research is also oriented towards design histories, open tools and learning collective ecosystems outside the institutional walls.",
     aboutExpand: "Expand",
-    aboutCollapse: "Compress",
+    aboutCollapse: "Collapse",
+    archiveCueDesktop:
+      "Write archive and press ↙ enter to view the full archive",
+    archiveCueMobile:
+      "Explore the complete archive on desktop",
     projects: projects("with"),
     curtain: {
       serviziLabel: "Services",
       serviziValue: SHARED.serviziEn,
       formazioneLabel: "Education",
-      formazioneValue: `Communication Design @${ext(HREF.iuav, "Iuav University of Venice")}<br>Industrial Design @${ext(HREF.poliba, "Polytechnic of Bari")}`,
+      formazioneValue: `Communication Design @${ext(HREF.iuav, SCHOOL.iuavEn)}<br>Industrial Design @${ext(HREF.poliba, SCHOOL.polibaEn)}`,
       esperienzaLabel: "Work experience",
       esperienzaValue: SHARED.esperienza,
       ricercheLabel: "Research",
-      ricercheValue: `${ext(HREF.mtf, em(MTF.en))}<br>${linked(HREF.meridiani, "Assembramenti. Meridiani.")}`,
+      ricercheValue: RESEARCH_LINES.en,
       contactLabel: "Get in touch for job inquiries and more information",
       piattaformeLabel: "Platforms",
       colophonCredit: SHARED.credit,
@@ -355,23 +430,23 @@ export const TRANSLATIONS = Object.freeze({
   }
 });
 
-const TEXT_FIELDS = [
+const TEXT_FIELDS = Object.freeze([
   ["servizi", "serviziLabel"],
   ["formazione", "formazioneLabel"],
   ["esperienza", "esperienzaLabel"],
   ["ricerche", "ricercheLabel"],
   ["contact", "contactLabel"],
   ["piattaforme", "piattaformeLabel"]
-];
+]);
 
-const HTML_FIELDS = [
+const HTML_FIELDS = Object.freeze([
   ["servizi", "serviziValue"],
   ["formazione", "formazioneValue"],
   ["esperienza", "esperienzaValue"],
   ["ricerche", "ricercheValue"],
   ["credit", "colophonCredit"],
   ["typography", "colophonTypography"]
-];
+]);
 
 const META_SELECTORS = Object.freeze([
   'meta[name="description"]',
@@ -439,7 +514,10 @@ const firstCreditLine = (html) =>
 
 export function projectFooterPer(project) {
   const per = firstCreditLine(project?.per);
-  return per ? `@${per}` : "";
+  const at = per ? `@${per}` : "";
+  const degree = stripHtml(project?.degree);
+  if (degree && at) return `${degree} ${at}`;
+  return degree || at;
 }
 
 export function projectFooterCon(project, collab = "Con") {
@@ -449,8 +527,9 @@ export function projectFooterCon(project, collab = "Con") {
 
 export const stripHtml = (html) =>
   String(html || "")
+    .replace(/<br\s*\/?>/gi, " ")
     .replace(/<[^>]+>/g, "")
-    .replace(/[\u2009\u200A\u2002]/g, " ")
+    .replace(/[\u2009\u200A\u2002\u00A0]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -473,6 +552,7 @@ export function projectIndex(lang) {
   const rows = Object.entries(catalog).map(([id, project]) => {
     const title = stripHtml(project.title);
     const per = stripHtml(project.per);
+    const degree = stripHtml(project.degree);
     const con = stripHtml(project.con);
     const sup = stripHtml(project.sup);
     const year = stripHtml(project.year);
@@ -482,7 +562,7 @@ export function projectIndex(lang) {
       title,
       year,
       yearKey: yearSortKey(year),
-      search: `${title} ${year} ${per} ${con} ${sup} ${tagsSearch}`.toLowerCase()
+      search: `${title} ${year} ${degree} ${per} ${con} ${sup} ${tagsSearch}`.toLowerCase()
     };
   });
 

@@ -24,23 +24,21 @@ const datePartsFmt = new Intl.DateTimeFormat("en-GB", {
   year: "numeric"
 });
 
-function formatClock(date = new Date()) {
-  return wrapTnum(timeFmt.format(date));
-}
+const formatClock = (date = new Date()) => wrapTnum(timeFmt.format(date));
 
 /** Always XX.XX.XXXX (Europe/Rome); digits tabular, dots proportional. */
-function formatDate(date = new Date()) {
+const formatDate = (date = new Date()) => {
   const parts = datePartsFmt.formatToParts(date);
   let d = "";
   let m = "";
   let y = "";
-  for (const part of parts) {
-    if (part.type === "day") d = part.value;
-    else if (part.type === "month") m = part.value;
-    else if (part.type === "year") y = part.value;
+  for (const { type, value } of parts) {
+    if (type === "day") d = value;
+    else if (type === "month") m = value;
+    else if (type === "year") y = value;
   }
   return d && m && y ? wrapTnum(`${d}.${m}.${y}`) : "";
-}
+};
 
 /**
  * 1 Hz clock + calendar date for one or more element ids.
@@ -125,10 +123,8 @@ export async function fetchTerlizziWeather(targets) {
   }
 
   try {
-    const res = await fetch(WEATHER_URL, {
-      signal,
-      headers: { Accept: "application/json" }
-    });
+    // No custom headers → simple CORS request (avoids preflight on mobile networks).
+    const res = await fetch(WEATHER_URL, { signal });
     if (!res.ok) return;
     const data = await res.json();
     const n = data?.current?.temperature_2m;

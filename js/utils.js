@@ -14,6 +14,15 @@ export const readLangParam = () => {
   return v === "en" || v === "it" ? v : null;
 };
 
+/** Keep default locale clean (`/` not `/?lang=it`). Optional hash (e.g. archive). */
+export const writeLangUrl = (lang, { hash = null } = {}) => {
+  const url = new URL(location.href);
+  if (lang === "it") url.searchParams.delete("lang");
+  else url.searchParams.set("lang", lang);
+  if (hash != null) url.hash = hash;
+  history.replaceState(null, "", url);
+};
+
 /** Wire a language toggle button from `{ text, target }`. */
 export const configureLangButton = (btn, cfg) => {
   if (!btn || !cfg) return;
@@ -40,15 +49,17 @@ export const bindQueryFace = (...els) => {
   }
 };
 
-/** Classic scrollbar width (0 with overlay scrollbars). */
+/** Classic scrollbar width (0 with overlay scrollbars). Measured once. */
+let _sbw;
 export const scrollbarWidth = () => {
+  if (_sbw != null) return _sbw;
   const outer = document.createElement("div");
   outer.style.cssText =
     "visibility:hidden;overflow:scroll;position:absolute;top:0;left:0;width:100px;height:100px";
   document.body.appendChild(outer);
-  const w = outer.offsetWidth - outer.clientWidth;
+  _sbw = outer.offsetWidth - outer.clientWidth;
   outer.remove();
-  return w;
+  return _sbw;
 };
 
 /** Keep fixed archive/404 frame aligned with in-flow home columns. */
@@ -110,17 +121,40 @@ export const pauseVideos = (root) => {
   });
 };
 
-/** Defer non-critical work past first paint / interaction. */
+/** Fisher–Yates shuffle; mutates and returns the array. */
+export const shuffleInPlace = (items) => {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+};
+
+/**
+ * Defer non-critical work past first paint / interaction.
+ * Prefer requestIdleCallback (bounded); fall back to postTask + hard timeout.
+ */
 export const whenIdle = (fn, timeout = 2500) => {
-  if (typeof scheduler?.postTask === "function") {
-    scheduler.postTask(fn, { priority: "background", delay: 0 }).catch(() => fn());
-    return;
-  }
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    fn();
+  };
+
   if (typeof requestIdleCallback === "function") {
-    requestIdleCallback(() => fn(), { timeout });
+    requestIdleCallback(run, { timeout });
     return;
   }
-  window.setTimeout(fn, 1);
+  // Avoid delay:0 during carousel boot — give the main thread a short breath.
+  if (typeof scheduler?.postTask === "function") {
+    scheduler
+      .postTask(run, { priority: "background", delay: 400 })
+      .catch(run);
+  } else {
+    window.setTimeout(run, 1);
+  }
+  window.setTimeout(run, timeout);
 };
 
 export const scrollToTop = (behavior = "smooth") => {

@@ -1,5 +1,5 @@
 import { projectCopy, projectFooterPer, projectFooterCon, indexLabels, SLASH } from "./i18n.js";
-import { $, pauseVideos, wrapTnum, rafSchedule, MQ } from "./utils.js";
+import { $, pauseVideos, wrapTnum, rafSchedule, MQ, shuffleInPlace } from "./utils.js";
 
 /**
  * Infinite horizontal project carousel.
@@ -141,9 +141,9 @@ export function createCarousel(root, { getLang } = {}) {
   };
 
   const clearClones = () => {
-    root
-      .querySelectorAll(".carousel-slide[data-loop-clone]")
-      .forEach((el) => el.remove());
+    root.querySelectorAll(".carousel-slide[data-loop-clone]").forEach((el) => {
+      el.remove();
+    });
   };
 
   const prepareCloneMedia = (node) => {
@@ -232,6 +232,28 @@ export function createCarousel(root, { getLang } = {}) {
     }
   };
 
+  /** Point LCP preload at the first image after shuffle. */
+  const syncLcpPreload = (img) => {
+    const href = img?.getAttribute("src") || img?.currentSrc || "";
+    if (!href) return;
+    let link = document.head.querySelector("link[data-carousel-lcp]");
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "image";
+      link.setAttribute("fetchpriority", "high");
+      link.dataset.carouselLcp = "";
+      document.head.appendChild(link);
+    }
+    const abs = new URL(href, location.href).href;
+    if (link.href !== abs) link.href = href;
+    if (href.endsWith(".webp")) link.type = "image/webp";
+    else link.removeAttribute("type");
+  };
+
+  const groupHasImg = (group) =>
+    group.some((slide) => slide.querySelector("img"));
+
   const shuffle = () => {
     clearClones();
     const slides = [...root.querySelectorAll(".carousel-slide")];
@@ -248,32 +270,51 @@ export function createCarousel(root, { getLang } = {}) {
       group.push(slide);
     }
 
-    // Keep the first DOM project group first so LCP preload stays valid.
-    const pinnedKey = slides[0]?.dataset.project;
-    const pinned = pinnedKey ? byProject.get(pinnedKey) : null;
-    if (pinnedKey) byProject.delete(pinnedKey);
+    const groups = shuffleInPlace([...byProject.values()]);
 
-    const groups = [...byProject.values()];
-    for (let i = groups.length - 1; i > 0; i--) {
-      const j = (Math.random() * (i + 1)) | 0;
-      [groups[i], groups[j]] = [groups[j], groups[i]];
+    // Prefer an image-bearing lead so LCP/preload stay meaningful.
+    if (groups.length && !groupHasImg(groups[0])) {
+      const withImg = groups.findIndex(groupHasImg);
+      if (withImg > 0) [groups[0], groups[withImg]] = [groups[withImg], groups[0]];
     }
-    if (pinned?.length) groups.unshift(pinned);
+
+    // Avoid repeating the same lead project on consecutive loads when possible.
+    try {
+      const last = sessionStorage.getItem("carousel_lead");
+      const lead = groups[0]?.[0]?.dataset.project || "";
+      if (last && lead && last === lead && groups.length > 1) {
+        const candidates = groups
+          .map((g, i) => i)
+          .filter((i) => i > 0 && groupHasImg(groups[i]));
+        const pool = candidates.length ? candidates : [1];
+        const swap = pool[(Math.random() * pool.length) | 0];
+        [groups[0], groups[swap]] = [groups[swap], groups[0]];
+      }
+      const nextLead = groups[0]?.[0]?.dataset.project || "";
+      if (nextLead) sessionStorage.setItem("carousel_lead", nextLead);
+    } catch {
+      /* private mode */
+    }
 
     const frag = document.createDocumentFragment();
-    let mediaIndex = 0;
     let origin = 0;
+    let imgRank = 0;
+    let leadImg = null;
     for (const group of groups) {
       for (const slide of group) {
         slide.removeAttribute("data-loop-clone");
         slide.dataset.originIndex = String(origin++);
         const img = slide.querySelector("img");
-        if (img) tuneLoading(img, mediaIndex);
+        if (img) {
+          tuneLoading(img, imgRank);
+          if (imgRank === 0) leadImg = img;
+          imgRank++;
+        }
         frag.appendChild(slide);
-        mediaIndex++;
       }
     }
     root.appendChild(frag);
+    syncLcpPreload(leadImg);
     setupLoop();
 
     const refresh = rafSchedule(() => {

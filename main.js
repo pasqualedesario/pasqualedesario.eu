@@ -19,6 +19,15 @@ const readLangParam = () => {
   return v === "en" || v === "it" ? v : null;
 };
 
+/** Keep default locale clean (`/` not `/?lang=it`). Optional hash (e.g. archive). */
+const writeLangUrl = (lang, { hash = null } = {}) => {
+  const url = new URL(location.href);
+  if (lang === "it") url.searchParams.delete("lang");
+  else url.searchParams.set("lang", lang);
+  if (hash != null) url.hash = hash;
+  history.replaceState(null, "", url);
+};
+
 /** Wire a language toggle button from `{ text, target }`. */
 const configureLangButton = (btn, cfg) => {
   if (!btn || !cfg) return;
@@ -45,15 +54,17 @@ const bindQueryFace = (...els) => {
   }
 };
 
-/** Classic scrollbar width (0 with overlay scrollbars). */
+/** Classic scrollbar width (0 with overlay scrollbars). Measured once. */
+let _sbw;
 const scrollbarWidth = () => {
+  if (_sbw != null) return _sbw;
   const outer = document.createElement("div");
   outer.style.cssText =
     "visibility:hidden;overflow:scroll;position:absolute;top:0;left:0;width:100px;height:100px";
   document.body.appendChild(outer);
-  const w = outer.offsetWidth - outer.clientWidth;
+  _sbw = outer.offsetWidth - outer.clientWidth;
   outer.remove();
-  return w;
+  return _sbw;
 };
 
 /** Keep fixed archive/404 frame aligned with in-flow home columns. */
@@ -115,17 +126,40 @@ const pauseVideos = (root) => {
   });
 };
 
-/** Defer non-critical work past first paint / interaction. */
+/** Fisher–Yates shuffle; mutates and returns the array. */
+const shuffleInPlace = (items) => {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+};
+
+/**
+ * Defer non-critical work past first paint / interaction.
+ * Prefer requestIdleCallback (bounded); fall back to postTask + hard timeout.
+ */
 const whenIdle = (fn, timeout = 2500) => {
-  if (typeof scheduler?.postTask === "function") {
-    scheduler.postTask(fn, { priority: "background", delay: 0 }).catch(() => fn());
-    return;
-  }
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    fn();
+  };
+
   if (typeof requestIdleCallback === "function") {
-    requestIdleCallback(() => fn(), { timeout });
+    requestIdleCallback(run, { timeout });
     return;
   }
-  window.setTimeout(fn, 1);
+  // Avoid delay:0 during carousel boot — give the main thread a short breath.
+  if (typeof scheduler?.postTask === "function") {
+    scheduler
+      .postTask(run, { priority: "background", delay: 400 })
+      .catch(run);
+  } else {
+    window.setTimeout(run, 1);
+  }
+  window.setTimeout(run, timeout);
 };
 
 const scrollToTop = (behavior = "smooth") => {
@@ -158,10 +192,19 @@ const tryCreate = (label, fn) => {
 
 const THIN = "\u2009";
 const HAIR = "\u200A";
+const NBSP = "\u00A0";
 const PLUS = `${HAIR}<span class="plus">+</span>${HAIR}`;
 const EM = `${THIN}<span class="dash">\u2014</span>${THIN}`;
 const EN = "\u2013";
 const SLASH = `${HAIR}/${HAIR}`;
+
+/** Keep school-name tails together (text-wrap:pretty is incomplete in links). */
+const SCHOOL = Object.freeze({
+  iuavIt: `Università Iuav${NBSP}di${NBSP}Venezia`,
+  polibaIt: `Politecnico${NBSP}di${NBSP}Bari`,
+  iuavEn: `Iuav University${NBSP}of${NBSP}Venice`,
+  polibaEn: `Polytechnic${NBSP}of${NBSP}Bari`
+});
 
 const ext = (href, html) =>
   `<a href="${href}" target="_blank" rel="noopener noreferrer">${html}</a>`;
@@ -171,7 +214,6 @@ const colophonLines = (...lines) =>
 
 const HREF = Object.freeze({
   mtf: "https://meme-things-first.github.io/MTF/",
-  meridiani: "https://assembramenti.net/meridiani/",
   iuav: "https://www.iuav.it",
   poliba: "https://www.poliba.it/",
   bruno: "https://www.b-r-u-n-o.it/",
@@ -189,9 +231,58 @@ const em = (html) => `<em>${html}</em>`;
 const BRUNO_SUP = `${ext(HREF.bruno, "bruno")} (Andrea Codolo &amp; Giacomo Covacich)`;
 const linked = (href, html) => ext(href, em(html));
 
+/** Apex degree note after a research title in the curtain. */
+const degreeNote = (label) =>
+  `<sup class="research-degree">${label}</sup>`;
+
 const MTF = Object.freeze({
   it: `Meme Things First${EM}Design tra politica, educazione e memetica`,
   en: `Meme Things First${EM}Design between politics, education and memetics`
+});
+
+const MC_TITLE = "Mimmo Castellano: furor graphicus";
+/** Desktop soft break after IT name / EN colon; degree note ends the title. */
+const VECCHI = Object.freeze({
+  it: Object.freeze({
+    head: "Il caso studio del tipografo-editore Valdemaro Vecchi",
+    tail: "e la stampa a caratteri mobili nel progetto contemporaneo"
+  }),
+  en: Object.freeze({
+    head: "Typographer-Publisher Valdemaro Vecchi:",
+    tail: "A Case Study on Movable Type in Contemporary Design"
+  })
+});
+const BR_DESKTOP = '<br class="title-break-desktop">';
+/** Space before break so mobile (br hidden) still separates the two halves. */
+const vecchiTitleEm = (lang) => {
+  const { head, tail } = VECCHI[lang] || VECCHI.it;
+  return em(`${head} ${BR_DESKTOP}${tail}`);
+};
+const vecchiResearchLine = (lang, bachelorLabel) => {
+  const { head, tail } = VECCHI[lang] || VECCHI.it;
+  return `${em(head)} ${BR_DESKTOP}${em(tail)}${degreeNote(bachelorLabel)}`;
+};
+
+/** Re-inject desktop soft-break after plain-text archive titles (HTML stripped). */
+const withDesktopTitleBreak = (html) =>
+  String(html || "").replace(/(Valdemaro Vecchi:?)\s+/, `$1 ${BR_DESKTOP}`);
+
+const DEGREE = Object.freeze({
+  master: Object.freeze({ it: "Tesi magistrale", en: "MA Thesis" }),
+  bachelor: Object.freeze({ it: "Tesi triennale", en: "BA Thesis" })
+});
+
+const RESEARCH_LINES = Object.freeze({
+  it: [
+    ext(HREF.mtf, em(MTF.it)),
+    `${em(MC_TITLE)}${degreeNote(DEGREE.master.it)}`,
+    vecchiResearchLine("it", DEGREE.bachelor.it)
+  ].join("<br>"),
+  en: [
+    ext(HREF.mtf, em(MTF.en)),
+    `${em(MC_TITLE)}${degreeNote(DEGREE.master.en)}`,
+    vecchiResearchLine("en", DEGREE.bachelor.en)
+  ].join("<br>")
 });
 
 /** Servizi curtain = SERVICE_IDS only. Archive tags may also use extras below. */
@@ -256,7 +347,7 @@ const SHARED = Object.freeze({
   serviziIt: serviziList("it")
 });
 
-/** Project catalog for a locale (`con` | `with`). Fields: year, title, per, con, sup, tags. */
+/** Project catalog for a locale (`con` | `with`). Fields: year, title, per, degree, con, sup, tags. */
 function projects(collab) {
   const it = collab === "con";
 
@@ -286,11 +377,21 @@ function projects(collab) {
     },
     mc: {
       year: "2025",
-      title: em("Mimmo Castellano: furor graphicus"),
+      title: em(MC_TITLE),
       per: "Iuav",
+      degree: it ? DEGREE.master.it : DEGREE.master.en,
       con: "",
       sup: "Monica Pastore, Fiorella Bulegato",
       tags: ["publishing", "research"]
+    },
+    vv: {
+      year: "2023",
+      title: vecchiTitleEm(it ? "it" : "en"),
+      per: "PoliBa",
+      degree: it ? DEGREE.bachelor.it : DEGREE.bachelor.en,
+      con: "",
+      sup: "Antonio Labalestra, Marco Pietrosante",
+      tags: ["research", "publishing"]
     },
     sm: {
       year: "2024",
@@ -456,16 +557,20 @@ const TRANSLATIONS = Object.freeze({
       "Designer e art director di base in Puglia. La sua pratica esplora tipografia, editoria, information e web design e tutte le modalità con le quali questi assi si interpolano nella costruzione dei sistemi visivi. Fonde curiosità e controllo, concentrandosi egualmente su processo ed esecuzione progettuale nello sviluppo di identità visive e spazi digitali per brand, istituzioni culturali e clienti privati. La sua ricerca è orientata anche alle storie del design, agli strumenti aperti e agli ecosistemi collettivi di apprendimento al di fuori delle mura istituzionali.",
     aboutExpand: "Espandi",
     aboutCollapse: "Comprimi",
+    archiveCueDesktop:
+      "Scrivi archivio e premi ↙ invio per visualizzare l’archivio completo",
+    archiveCueMobile:
+      "Esplora l’archivio completo sul sito desktop",
     projects: projects("con"),
     curtain: {
       serviziLabel: "Servizi",
       serviziValue: SHARED.serviziIt,
       formazioneLabel: "Formazione",
-      formazioneValue: `Design della comunicazione @${ext(HREF.iuav, "Università Iuav di Venezia")}<br>Disegno industriale @${ext(HREF.poliba, "Politecnico di Bari")}`,
+      formazioneValue: `Design della comunicazione @${ext(HREF.iuav, SCHOOL.iuavIt)}<br>Disegno industriale @${ext(HREF.poliba, SCHOOL.polibaIt)}`,
       esperienzaLabel: "Esperienza",
       esperienzaValue: SHARED.esperienza,
       ricercheLabel: "Ricerca",
-      ricercheValue: `${ext(HREF.mtf, em(MTF.it))}<br>${linked(HREF.meridiani, "Assembramenti. Meridiani.")}`,
+      ricercheValue: RESEARCH_LINES.it,
       contactLabel: "Per progetti, collaborazioni e ulteriori info",
       piattaformeLabel: "Piattaforme",
       colophonCredit: SHARED.credit,
@@ -483,24 +588,28 @@ const TRANSLATIONS = Object.freeze({
     indexLabels: {
       title: "Archive",
       collab: "With",
-      supervision: "Supervision"
+      supervision: "Tutoring"
     },
     aboutShort:
       "Designer and art director based in Puglia, Italy.",
     aboutFull:
       "Designer and art director based in Puglia, Italy. His practice explores typography, publishing, information and web design and all the ways they interpolate each other within and without visual systems. His approach mixes curiosity and control, focusing equally on process and execution for the development of visual identities and digital spaces for brands, institutions and private clients. His research is also oriented towards design histories, open tools and learning collective ecosystems outside the institutional walls.",
     aboutExpand: "Expand",
-    aboutCollapse: "Compress",
+    aboutCollapse: "Collapse",
+    archiveCueDesktop:
+      "Write archive and press ↙ enter to view the full archive",
+    archiveCueMobile:
+      "Explore the complete archive on desktop",
     projects: projects("with"),
     curtain: {
       serviziLabel: "Services",
       serviziValue: SHARED.serviziEn,
       formazioneLabel: "Education",
-      formazioneValue: `Communication Design @${ext(HREF.iuav, "Iuav University of Venice")}<br>Industrial Design @${ext(HREF.poliba, "Polytechnic of Bari")}`,
+      formazioneValue: `Communication Design @${ext(HREF.iuav, SCHOOL.iuavEn)}<br>Industrial Design @${ext(HREF.poliba, SCHOOL.polibaEn)}`,
       esperienzaLabel: "Work experience",
       esperienzaValue: SHARED.esperienza,
       ricercheLabel: "Research",
-      ricercheValue: `${ext(HREF.mtf, em(MTF.en))}<br>${linked(HREF.meridiani, "Assembramenti. Meridiani.")}`,
+      ricercheValue: RESEARCH_LINES.en,
       contactLabel: "Get in touch for job inquiries and more information",
       piattaformeLabel: "Platforms",
       colophonCredit: SHARED.credit,
@@ -509,23 +618,23 @@ const TRANSLATIONS = Object.freeze({
   }
 });
 
-const TEXT_FIELDS = [
+const TEXT_FIELDS = Object.freeze([
   ["servizi", "serviziLabel"],
   ["formazione", "formazioneLabel"],
   ["esperienza", "esperienzaLabel"],
   ["ricerche", "ricercheLabel"],
   ["contact", "contactLabel"],
   ["piattaforme", "piattaformeLabel"]
-];
+]);
 
-const HTML_FIELDS = [
+const HTML_FIELDS = Object.freeze([
   ["servizi", "serviziValue"],
   ["formazione", "formazioneValue"],
   ["esperienza", "esperienzaValue"],
   ["ricerche", "ricercheValue"],
   ["credit", "colophonCredit"],
   ["typography", "colophonTypography"]
-];
+]);
 
 const META_SELECTORS = Object.freeze([
   'meta[name="description"]',
@@ -593,7 +702,10 @@ const firstCreditLine = (html) =>
 
 function projectFooterPer(project) {
   const per = firstCreditLine(project?.per);
-  return per ? `@${per}` : "";
+  const at = per ? `@${per}` : "";
+  const degree = stripHtml(project?.degree);
+  if (degree && at) return `${degree} ${at}`;
+  return degree || at;
 }
 
 function projectFooterCon(project, collab = "Con") {
@@ -603,8 +715,9 @@ function projectFooterCon(project, collab = "Con") {
 
 const stripHtml = (html) =>
   String(html || "")
+    .replace(/<br\s*\/?>/gi, " ")
     .replace(/<[^>]+>/g, "")
-    .replace(/[\u2009\u200A\u2002]/g, " ")
+    .replace(/[\u2009\u200A\u2002\u00A0]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -627,6 +740,7 @@ function projectIndex(lang) {
   const rows = Object.entries(catalog).map(([id, project]) => {
     const title = stripHtml(project.title);
     const per = stripHtml(project.per);
+    const degree = stripHtml(project.degree);
     const con = stripHtml(project.con);
     const sup = stripHtml(project.sup);
     const year = stripHtml(project.year);
@@ -636,7 +750,7 @@ function projectIndex(lang) {
       title,
       year,
       yearKey: yearSortKey(year),
-      search: `${title} ${year} ${per} ${con} ${sup} ${tagsSearch}`.toLowerCase()
+      search: `${title} ${year} ${degree} ${per} ${con} ${sup} ${tagsSearch}`.toLowerCase()
     };
   });
 
@@ -687,23 +801,21 @@ const datePartsFmt = new Intl.DateTimeFormat("en-GB", {
   year: "numeric"
 });
 
-function formatClock(date = new Date()) {
-  return wrapTnum(timeFmt.format(date));
-}
+const formatClock = (date = new Date()) => wrapTnum(timeFmt.format(date));
 
 /** Always XX.XX.XXXX (Europe/Rome); digits tabular, dots proportional. */
-function formatDate(date = new Date()) {
+const formatDate = (date = new Date()) => {
   const parts = datePartsFmt.formatToParts(date);
   let d = "";
   let m = "";
   let y = "";
-  for (const part of parts) {
-    if (part.type === "day") d = part.value;
-    else if (part.type === "month") m = part.value;
-    else if (part.type === "year") y = part.value;
+  for (const { type, value } of parts) {
+    if (type === "day") d = value;
+    else if (type === "month") m = value;
+    else if (type === "year") y = value;
   }
   return d && m && y ? wrapTnum(`${d}.${m}.${y}`) : "";
-}
+};
 
 /**
  * 1 Hz clock + calendar date for one or more element ids.
@@ -788,10 +900,8 @@ async function fetchTerlizziWeather(targets) {
   }
 
   try {
-    const res = await fetch(WEATHER_URL, {
-      signal,
-      headers: { Accept: "application/json" }
-    });
+    // No custom headers → simple CORS request (avoids preflight on mobile networks).
+    const res = await fetch(WEATHER_URL, { signal });
     if (!res.ok) return;
     const data = await res.json();
     const n = data?.current?.temperature_2m;
@@ -953,9 +1063,9 @@ function createCarousel(root, { getLang } = {}) {
   };
 
   const clearClones = () => {
-    root
-      .querySelectorAll(".carousel-slide[data-loop-clone]")
-      .forEach((el) => el.remove());
+    root.querySelectorAll(".carousel-slide[data-loop-clone]").forEach((el) => {
+      el.remove();
+    });
   };
 
   const prepareCloneMedia = (node) => {
@@ -1044,6 +1154,28 @@ function createCarousel(root, { getLang } = {}) {
     }
   };
 
+  /** Point LCP preload at the first image after shuffle. */
+  const syncLcpPreload = (img) => {
+    const href = img?.getAttribute("src") || img?.currentSrc || "";
+    if (!href) return;
+    let link = document.head.querySelector("link[data-carousel-lcp]");
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "image";
+      link.setAttribute("fetchpriority", "high");
+      link.dataset.carouselLcp = "";
+      document.head.appendChild(link);
+    }
+    const abs = new URL(href, location.href).href;
+    if (link.href !== abs) link.href = href;
+    if (href.endsWith(".webp")) link.type = "image/webp";
+    else link.removeAttribute("type");
+  };
+
+  const groupHasImg = (group) =>
+    group.some((slide) => slide.querySelector("img"));
+
   const shuffle = () => {
     clearClones();
     const slides = [...root.querySelectorAll(".carousel-slide")];
@@ -1060,32 +1192,51 @@ function createCarousel(root, { getLang } = {}) {
       group.push(slide);
     }
 
-    // Keep the first DOM project group first so LCP preload stays valid.
-    const pinnedKey = slides[0]?.dataset.project;
-    const pinned = pinnedKey ? byProject.get(pinnedKey) : null;
-    if (pinnedKey) byProject.delete(pinnedKey);
+    const groups = shuffleInPlace([...byProject.values()]);
 
-    const groups = [...byProject.values()];
-    for (let i = groups.length - 1; i > 0; i--) {
-      const j = (Math.random() * (i + 1)) | 0;
-      [groups[i], groups[j]] = [groups[j], groups[i]];
+    // Prefer an image-bearing lead so LCP/preload stay meaningful.
+    if (groups.length && !groupHasImg(groups[0])) {
+      const withImg = groups.findIndex(groupHasImg);
+      if (withImg > 0) [groups[0], groups[withImg]] = [groups[withImg], groups[0]];
     }
-    if (pinned?.length) groups.unshift(pinned);
+
+    // Avoid repeating the same lead project on consecutive loads when possible.
+    try {
+      const last = sessionStorage.getItem("carousel_lead");
+      const lead = groups[0]?.[0]?.dataset.project || "";
+      if (last && lead && last === lead && groups.length > 1) {
+        const candidates = groups
+          .map((g, i) => i)
+          .filter((i) => i > 0 && groupHasImg(groups[i]));
+        const pool = candidates.length ? candidates : [1];
+        const swap = pool[(Math.random() * pool.length) | 0];
+        [groups[0], groups[swap]] = [groups[swap], groups[0]];
+      }
+      const nextLead = groups[0]?.[0]?.dataset.project || "";
+      if (nextLead) sessionStorage.setItem("carousel_lead", nextLead);
+    } catch {
+      /* private mode */
+    }
 
     const frag = document.createDocumentFragment();
-    let mediaIndex = 0;
     let origin = 0;
+    let imgRank = 0;
+    let leadImg = null;
     for (const group of groups) {
       for (const slide of group) {
         slide.removeAttribute("data-loop-clone");
         slide.dataset.originIndex = String(origin++);
         const img = slide.querySelector("img");
-        if (img) tuneLoading(img, mediaIndex);
+        if (img) {
+          tuneLoading(img, imgRank);
+          if (imgRank === 0) leadImg = img;
+          imgRank++;
+        }
         frag.appendChild(slide);
-        mediaIndex++;
       }
     }
     root.appendChild(frag);
+    syncLcpPreload(leadImg);
     setupLoop();
 
     const refresh = rafSchedule(() => {
@@ -1375,10 +1526,12 @@ const paintQuerySurface = (el, { show, text, reduceMotion = false }) => {
   el.toggleAttribute("aria-hidden", !show);
   if (!show) {
     el.classList.remove("is-caret-blink");
+    el.replaceChildren();
     return;
   }
   if (!text) {
     el.classList.toggle("is-caret-blink", !reduceMotion);
+    if (el.firstElementChild?.classList.contains("query-caret")) return;
     el.replaceChildren();
     const caret = document.createElement("span");
     caret.className = "query-caret";
@@ -1553,6 +1706,21 @@ function createIndexPanel({
   const metaSup = $("index-meta-sup");
   const gateQuery = $("site-gate-query");
   const siteGate = gateQuery?.closest(".site-gate") || $("site-gate");
+  const cueRoots = [...document.querySelectorAll(".archive-cues")];
+  const cueDesktop = [...document.querySelectorAll("[data-archive-cue]")];
+  const cueMobile = [...document.querySelectorAll("[data-archive-cue-mobile]")];
+  const contactSection = document.querySelector(".stack-section--contact");
+  const aboutRow = contactSection?.querySelector(".curtain-about-row");
+  const colophonBar = contactSection?.querySelector(".footer-bar--colophon");
+  const emailBlock = contactSection?.querySelector(".info-block--contact");
+  const platformsBlock = contactSection?.querySelector(".info-block--platforms");
+  const desktopAboutBand = contactSection?.querySelector(
+    ".archive-cues--desktop.archive-cues--band-about"
+  );
+  const mobileEmailBand = contactSection?.querySelector(".archive-cues--band-email");
+  const mobileAboutBand = contactSection?.querySelector(
+    ".archive-cues--mobile.archive-cues--band-about"
+  );
   if (!curtain || !results || !queryEl) return null;
 
   bindQueryFace(queryEl, gateQuery);
@@ -1573,6 +1741,8 @@ function createIndexPanel({
     query: "",
     gate: "",
     cueReady: false,
+    minuteReady: false,
+    scrolledEnd: false,
     mediaByProject: null,
     selected: [],
     hoverId: null,
@@ -1748,6 +1918,7 @@ function createIndexPanel({
     const year = stripHtml(project.year);
     const tagsHtml = projectTagsHtml(project.tags, lang());
     const perHtml = String(project.per || "").trim();
+    const degree = stripHtml(project.degree);
     const con = stripHtml(project.con);
     const supHtml = String(project.sup || "").trim();
     const labels = indexLabels(lang()) || {};
@@ -1757,19 +1928,21 @@ function createIndexPanel({
     if (metaYear) metaYear.innerHTML = wrapTnum(year);
     if (metaTags) metaTags.innerHTML = tagsHtml;
     if (metaPer) {
-      metaPer.innerHTML = perHtml
+      const atLines = perHtml
         ? perHtml
             .split(/<br\s*\/?>/i)
             .map((part, i) => (i === 0 ? `@${part}` : part))
             .join("<br>")
         : "";
+      metaPer.innerHTML =
+        degree && atLines ? `${degree} ${atLines}` : degree || atLines;
     }
     if (metaCon) metaCon.textContent = con ? `${collab}: ${con}` : "";
     if (metaSup) {
       metaSup.innerHTML = supHtml ? `${supervision}: ${supHtml}` : "";
     }
 
-    metaRoot.hidden = !(year || tagsHtml || perHtml || con || supHtml);
+    metaRoot.hidden = !(year || tagsHtml || perHtml || degree || con || supHtml);
   };
 
   const setHover = (projectId) => {
@@ -1795,14 +1968,15 @@ function createIndexPanel({
 
   const activeQueryEl = () => {
     if (state.open) return queryEl;
-    if (!state.mobile && (state.cueReady || state.gate)) return gateQuery;
+    // Desktop gate typing is always available; cues are only a visual hint.
+    if (!state.mobile) return gateQuery;
     return null;
   };
 
   const activeQueryValue = () => (state.open ? state.query : state.gate);
 
   const isQueryTyping = () =>
-    state.open || (!state.mobile && (state.cueReady || Boolean(state.gate)));
+    state.open || (!state.mobile && Boolean(state.gate));
 
   const syncTypingClass = () => setQueryTyping(isQueryTyping(), html);
 
@@ -1813,12 +1987,89 @@ function createIndexPanel({
 
   const syncArchiveQueryDisplay = () => paint(queryEl, state.open, state.query);
 
+  const syncCueCopy = (code = lang()) => {
+    const t = TRANSLATIONS[code];
+    const desktop = t?.archiveCueDesktop || "";
+    const mobile = t?.archiveCueMobile || "";
+    for (const el of cueDesktop) {
+      if (el.textContent !== desktop) el.textContent = desktop;
+    }
+    for (const el of cueMobile) {
+      if (el.textContent !== mobile) el.textContent = mobile;
+    }
+  };
+
+  const clearBand = (el) => {
+    if (!el) return;
+    el.style.top = "";
+    el.style.bottom = "";
+  };
+
+  /** Absolute cue band between two elements inside the contact section. */
+  const placeBand = (el, above, below, sec) => {
+    if (!el || !above || !below) {
+      clearBand(el);
+      return;
+    }
+    const a = above.getBoundingClientRect();
+    const b = below.getBoundingClientRect();
+    el.style.top = `${Math.max(0, a.bottom - sec.top)}px`;
+    el.style.bottom = `${Math.max(0, sec.bottom - b.top)}px`;
+  };
+
+  /** Position cue overlays without touching about / colophon flow. */
+  const layoutCueBands = () => {
+    if (!contactSection) return;
+    const sec = contactSection.getBoundingClientRect();
+    if (state.mobile) {
+      clearBand(desktopAboutBand);
+      placeBand(mobileEmailBand, emailBlock, platformsBlock, sec);
+      placeBand(mobileAboutBand, aboutRow, colophonBar, sec);
+      return;
+    }
+    clearBand(mobileEmailBand);
+    clearBand(mobileAboutBand);
+    placeBand(desktopAboutBand, aboutRow, colophonBar, sec);
+  };
+
+  const syncCueVisibility = () => {
+    // Hints only — hide while typing into the gate or when archive is open.
+    const show = state.cueReady && !state.open && !state.gate;
+    html.classList.toggle("is-archive-cue-visible", show);
+    for (const root of cueRoots) {
+      root.hidden = !show;
+      root.setAttribute("aria-hidden", show ? "false" : "true");
+    }
+    if (show) layoutCueBands();
+  };
+
+  const refreshCueReady = () => {
+    const next = state.minuteReady && state.scrolledEnd;
+    if (state.cueReady === next) return;
+    state.cueReady = next;
+    // syncGateDisplay → syncCueVisibility (layout once when cues appear).
+    syncGateDisplay();
+  };
+
+  const checkScrolledEnd = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    return max <= 4 || window.scrollY >= max - 8;
+  };
+
+  const onScrollCue = rafSchedule(() => {
+    if (state.scrolledEnd) return;
+    if (!checkScrolledEnd()) return;
+    state.scrolledEnd = true;
+    refreshCueReady();
+  });
+
   const syncGateDisplay = () => {
-    const show =
-      !state.open && !state.mobile && (state.cueReady || Boolean(state.gate));
+    // No empty caret: show the gate surface only while typing a keyword.
+    const show = !state.open && !state.mobile && Boolean(state.gate);
     paint(gateQuery, show, state.gate);
     if (siteGate) siteGate.setAttribute("aria-hidden", show ? "false" : "true");
     syncTypingClass();
+    syncCueVisibility();
   };
 
   const setGate = (next) => {
@@ -1855,7 +2106,8 @@ function createIndexPanel({
       el.dataset.project = entry.id;
       el.dataset.search = entry.search;
       el.tabIndex = 0;
-      el.innerHTML = `<span class="index-result__num tnum">[${num}]</span>${withDashSpans(entry.title)}`;
+      const titleHtml = withDesktopTitleBreak(withDashSpans(entry.title));
+      el.innerHTML = `<span class="index-result__num tnum">[${num}]</span>${titleHtml}`;
       state.resultNodes.push(el);
       state.resultById.set(entry.id, el);
       frag.appendChild(el);
@@ -1948,8 +2200,10 @@ function createIndexPanel({
       clearResults();
     }
     syncColophon(code);
+    syncCueCopy(code);
     setAriaLabels();
     if (state.open) applyFilter();
+    syncCueVisibility();
   };
 
   const setOpen = (open) => {
@@ -2136,13 +2390,28 @@ function createIndexPanel({
   curtain.addEventListener("click", onCurtainClick);
   onMediaChange(mobileMq, onMobileChange);
 
+  window.addEventListener("scroll", onScrollCue, { passive: true });
+  window.addEventListener(
+    "resize",
+    rafSchedule(() => {
+      if (!state.scrolledEnd && checkScrolledEnd()) {
+        state.scrolledEnd = true;
+        refreshCueReady();
+      }
+      if (html.classList.contains("is-archive-cue-visible")) layoutCueBands();
+    }),
+    { passive: true }
+  );
+
   window.setTimeout(() => {
-    state.cueReady = true;
-    syncGateDisplay();
+    state.minuteReady = true;
+    if (!state.scrolledEnd && checkScrolledEnd()) state.scrolledEnd = true;
+    refreshCueReady();
   }, HINT_DELAY_MS);
 
   onMobileChange();
   render();
+  if (checkScrolledEnd()) state.scrolledEnd = true;
   onLanguageBound?.((code) => render(code));
 
   return {
@@ -2209,12 +2478,7 @@ const languageListeners = [];
 const mobileMq = window.matchMedia(MQ.mobile);
 
 const writeUrl = ({ lang: nextLang = lang, archive = index?.isOpen() } = {}) => {
-  const url = new URL(location.href);
-  // Keep the default locale clean (`/` not `/?lang=it`).
-  if (nextLang === "it") url.searchParams.delete("lang");
-  else url.searchParams.set("lang", nextLang);
-  url.hash = archive ? ARCHIVE_HASH : "";
-  history.replaceState(null, "", url);
+  writeLangUrl(nextLang, { hash: archive ? ARCHIVE_HASH : "" });
 };
 
 /** Desktop: full bio. Mobile: short + optional expand. */
@@ -2226,8 +2490,9 @@ const syncAbout = (code = lang) => {
   if (dom.introStart) {
     dom.introStart.textContent = !mobile || expanded ? t.aboutFull : t.aboutShort;
   }
+  // Contact curtain bio stays full on every viewport.
   dom.introSmall?.forEach((el) => {
-    el.textContent = mobile ? t.aboutShort : t.aboutFull;
+    el.textContent = t.aboutFull;
   });
   if (dom.introExpand) {
     dom.introExpand.hidden = !mobile;
@@ -2299,8 +2564,7 @@ for (const link of dom.brandLinks) {
 dom.introExpand?.addEventListener("click", () => {
   aboutExpanded = !aboutExpanded;
   syncAbout();
-  // ResizeObserver also fires; double-rAF resnap waits for flex settle.
-  if (mobileMq.matches) carousel?.relayout?.();
+  carousel?.relayout();
 });
 
 onMediaChange(mobileMq, () => {
