@@ -121,7 +121,7 @@ const RESEARCH_LINES = Object.freeze({
 const SERVICE_IDS = Object.freeze([
   "artDirection",
   "visualIdentity",
-  "publishing",
+  "editorialDesign",
   "graphicDesign",
   "typeDesign",
   "informationDesign",
@@ -131,7 +131,7 @@ const SERVICE_IDS = Object.freeze([
 const TAGS = Object.freeze({
   artDirection: { it: "Art Direction", en: "Art Direction" },
   visualIdentity: { it: "Identità visiva", en: "Visual Identity" },
-  publishing: { it: "Editoria", en: "Publishing" },
+  editorialDesign: { it: "Editorial Design", en: "Editorial Design" },
   graphicDesign: { it: "Graphic Design", en: "Graphic Design" },
   typeDesign: { it: "Type Design", en: "Type Design" },
   informationDesign: { it: "Information Design", en: "Information Design" },
@@ -217,7 +217,7 @@ function projects(collab) {
       degree: it ? DEGREE.master.it : DEGREE.master.en,
       con: "",
       sup: "Monica Pastore, Fiorella Bulegato",
-      tags: ["publishing", "research"]
+      tags: ["editorialDesign", "research"]
     },
     sacroscarto: {
       year: "2025",
@@ -225,7 +225,7 @@ function projects(collab) {
       per: "Iuav",
       con: "Jolanda Baudino, Andrea Malossi, Giulia Righi",
       sup: "Stefano Rovai, Alessandro Bulegato",
-      tags: ["visualIdentity", "publishing"]
+      tags: ["visualIdentity", "editorialDesign"]
     },
     vv: {
       year: "2023",
@@ -234,7 +234,7 @@ function projects(collab) {
       degree: it ? DEGREE.bachelor.it : DEGREE.bachelor.en,
       con: "",
       sup: "Antonio Labalestra, Marco Pietrosante",
-      tags: ["research", "publishing"]
+      tags: ["research", "editorialDesign"]
     },
     sm: {
       year: "2024",
@@ -242,7 +242,7 @@ function projects(collab) {
       per: "Iuav",
       con: "Jolanda Baudino, Chiara Lorenzo, Irene Mazzoleni",
       sup: "Fiorella Bulegato, Valentina Nitti",
-      tags: ["publishing", "research"]
+      tags: ["editorialDesign", "research"]
     },
     egozip: {
       year: "2024",
@@ -250,7 +250,7 @@ function projects(collab) {
       per: "Iuav",
       con: "Jolanda Baudino, Lucrezia Bonaudo, Andrea Malossi",
       sup: "Massimiliano Ciammaichella, Olimpia Russo",
-      tags: ["publishing", "videomaking"]
+      tags: ["editorialDesign", "videomaking"]
     },
     alelaie: {
       year: "2024",
@@ -271,7 +271,7 @@ function projects(collab) {
       title: linked(HREF.mtf, it ? MTF.it : MTF.en),
       per: "Iuav",
       con: "Rebecca Bertero, Serena De Mola",
-      tags: ["visualIdentity", "publishing", "webDesign", "research", "curation"]
+      tags: ["visualIdentity", "editorialDesign", "webDesign", "research", "curation"]
     },
     bp: {
       year: "2024",
@@ -279,7 +279,7 @@ function projects(collab) {
       per: "Iuav",
       con: "Giulia Gatta, Tommaso Antonelli",
       sup: "Luciano Perondi, Bruno Calza",
-      tags: ["publishing", "informationDesign"]
+      tags: ["editorialDesign", "informationDesign"]
     },
     ar: {
       year: "2025",
@@ -290,7 +290,7 @@ function projects(collab) {
       per: "Apparati Radicali",
       con: "",
       sup: `Noemi Biasetton, ${BRUNO_SUP}`,
-      tags: ["publishing", "artwork"],
+      tags: ["editorialDesign", "artwork"],
       links: [HREF.biasetton, HREF.pinaultAr]
     },
     typearound: {
@@ -331,7 +331,7 @@ function projects(collab) {
       per: "PoliBa",
       con: "Marcella Carlucci, Erasmo Giove",
       sup: "Nino Perrone, Vito Battista",
-      tags: ["informationDesign", "publishing"]
+      tags: ["informationDesign", "editorialDesign"]
     },
     serenissima: {
       year: "2024",
@@ -339,7 +339,7 @@ function projects(collab) {
       per: "Iuav",
       con: "Andrea Pintauro",
       sup: "Nicola Di Croce",
-      tags: ["publishing", "photography", "soundDesign"]
+      tags: ["editorialDesign", "photography", "soundDesign"]
     },
     em: {
       year: "2022",
@@ -361,7 +361,7 @@ function projects(collab) {
       per: "Iuav",
       con: "Tommaso Antonelli, Alessio Costantini, Andrea Pintauro",
       sup: "Gianni Sinni, Irene Sgarro",
-      tags: ["informationDesign", "publishing"]
+      tags: ["informationDesign", "editorialDesign"]
     },
     chiomarosa: {
       year: "2025",
