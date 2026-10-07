@@ -417,7 +417,7 @@ export const ABOUT_BOOT = Object.freeze({
   }),
   en: Object.freeze({
     short: "Designer and art director based in Puglia, Italy.",
-    full: "Designer and art director based in Puglia, Italy. His practice explores typography, publishing, information and web design and all the ways they interpolate each other within and without visual systems. His approach mixes curiosity and control, focusing equally on process and execution for the development of visual identities and digital spaces for brands, institutions and private clients. His research is also oriented towards design histories, open tools and learning collective ecosystems outside the institutional walls.",
+    full: "Designer and art director based in Puglia, Italy. His practice explores typography, publishing, information, and web design, examining how they intersect and inform one another across and beyond visual systems. His approach mixes curiosity and control, focusing equally on process and execution for the development of visual identities and digital spaces for brands, institutions and private clients. His research also engages with design histories, open tools and learning collective ecosystems outside the institutional walls.",
     expand: "Expand"
   })
 });
