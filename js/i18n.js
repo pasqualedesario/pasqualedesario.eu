@@ -384,13 +384,6 @@ function projects(collab) {
       sup: BRUNO_SUP,
       tags: ["graphicDesign", "photography"]
     },
-    supernico: {
-      year: "2026",
-      title: em("SUPERNICO"),
-      per: "",
-      con: "Donato Loforese",
-      tags: ["visualIdentity", "artDirection"]
-    },
     matteatro: {
       year: "2023",
       title: em(it ? "MAT teatro" : "MAT theatre"),
