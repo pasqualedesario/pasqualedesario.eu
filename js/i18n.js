@@ -39,15 +39,14 @@ const HREF = Object.freeze({
   pinaultAr:
     "https://www.pinaultcollection.com/palazzograssi/it/masterclass-apparati-radicali",
   typeAround:
-    "https://salgemmaproject.com/portfolio/type-around-workshop-di-tipografia-collletttivo/"
+    "https://salgemmaproject.com/portfolio/type-around-workshop-di-tipografia-collletttivo/",
+  marcovaldo: "https://pasqualedesario.github.io/Marcovaldo/"
 });
 
 const em = (html) => `<em>${html}</em>`;
 
 /** Recurring supervision credit for bruno studio. */
 const BRUNO_SUP = `${ext(HREF.bruno, "bruno")} (Andrea Codolo &amp; Giacomo Covacich)`;
-const linked = (href, html) => ext(href, em(html));
-
 /** Apex note after a title (research curtain + archive list). */
 const degreeNote = (label) =>
   `<sup class="research-degree">${label}</sup>`;
@@ -131,7 +130,7 @@ const SERVICE_IDS = Object.freeze([
 const TAGS = Object.freeze({
   artDirection: { it: "Art Direction", en: "Art Direction" },
   visualIdentity: { it: "Identità visiva", en: "Visual Identity" },
-  editorialDesign: { it: "Editorial Design", en: "Editorial Design" },
+  editorialDesign: { it: "Editoria", en: "Editorial Design" },
   graphicDesign: { it: "Graphic Design", en: "Graphic Design" },
   typeDesign: { it: "Type Design", en: "Type Design" },
   informationDesign: { it: "Information Design", en: "Information Design" },
@@ -254,10 +253,11 @@ function projects(collab) {
     },
     alelaie: {
       year: "2024",
-      title: linked(HREF.alelaie, "Modernizzare stanca"),
+      title: em("Modernizzare stanca"),
       per: "Spazio Alelaie",
       con: "",
-      tags: ["manifesto"]
+      tags: ["manifesto"],
+      links: [HREF.alelaie]
     },
     "4v": {
       year: "2023",
@@ -268,10 +268,11 @@ function projects(collab) {
     },
     mtf: {
       year: `2024${EN}2026`,
-      title: linked(HREF.mtf, it ? MTF.it : MTF.en),
+      title: em(it ? MTF.it : MTF.en),
       per: "Iuav",
       con: "Rebecca Bertero, Serena De Mola",
-      tags: ["visualIdentity", "editorialDesign", "webDesign", "research", "curation"]
+      tags: ["visualIdentity", "editorialDesign", "webDesign", "research", "curation"],
+      links: [HREF.mtf]
     },
     bp: {
       year: "2024",
@@ -341,10 +342,22 @@ function projects(collab) {
       sup: "Nicola Di Croce",
       tags: ["editorialDesign", "photography", "soundDesign"]
     },
+    marcovaldo: {
+      year: it ? "In corso" : "Ongoing",
+      title: em("Marcovaldo"),
+      per: it
+        ? "Concept tipografico generativo"
+        : "Generative botanical typeface concept",
+      at: false,
+      con: "",
+      tags: ["typeDesign", "research", "webDesign"],
+      links: [HREF.marcovaldo]
+    },
     em: {
       year: "2022",
       title: em("La creatività è una merda"),
       per: it ? "Omaggio a Enzo Mari" : "Homage to Enzo Mari",
+      at: false,
       con: "",
       tags: ["manifesto"]
     },
@@ -613,10 +626,14 @@ const firstCreditLine = (html) =>
 
 export function projectFooterPer(project) {
   const per = firstCreditLine(project?.per);
-  const at = per ? `@${per}` : "";
+  if (!per) {
+    const degree = stripHtml(project?.degree);
+    return degree || "";
+  }
+  const credit = project?.at === false ? per : `@${per}`;
   const degree = stripHtml(project?.degree);
-  if (degree && at) return `${degree} ${at}`;
-  return degree || at;
+  if (degree && credit) return `${degree} ${credit}`;
+  return degree || credit;
 }
 
 export function projectFooterCon(project, collab = "Con") {
@@ -635,7 +652,9 @@ export const stripHtml = (html) =>
 const indexCache = Object.create(null);
 
 const yearSortKey = (year) => {
-  const nums = String(year || "").match(/\d{4}/g);
+  const s = String(year || "");
+  if (/in\s*corso|ongoing/i.test(s)) return 9999;
+  const nums = s.match(/\d{4}/g);
   if (!nums?.length) return 0;
   return Math.max(...nums.map(Number));
 };
@@ -690,11 +709,11 @@ export function projectTagsHtml(tags, lang) {
   return tagLabels(tags, lang).join(EM);
 }
 
-/** Archive meta “Link:” line (protocol stripped from visible labels). */
-export function projectLinksHtml(links, label = "Link") {
+/** Archive meta links (protocol stripped from visible labels; no “Link:” prefix). */
+export function projectLinksHtml(links) {
   const hrefs = (links || []).filter(Boolean);
   if (!hrefs.length) return "";
-  return `${label}: ${hrefs
+  return hrefs
     .map((href) => ext(href, String(href).replace(/^https?:\/\//, "")))
-    .join("<br>")}`;
+    .join("<br>");
 }

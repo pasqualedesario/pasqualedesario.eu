@@ -334,15 +334,16 @@ export function createIndexPanel({
     const labels = indexLabels(lang()) || {};
     const collab = labels.collab || "Con";
     const supervision = labels.supervision || "Supervisione";
-    const linksHtml = projectLinksHtml(project.links, labels.link || "Link");
+    const linksHtml = projectLinksHtml(project.links);
 
     if (metaYear) metaYear.innerHTML = wrapTnum(year);
     if (metaTags) metaTags.innerHTML = tagsHtml;
     if (metaPer) {
+      const withAt = project.at !== false;
       const atLines = perHtml
         ? perHtml
             .split(/<br\s*\/?>/i)
-            .map((part, i) => (i === 0 ? `@${part}` : part))
+            .map((part, i) => (i === 0 && withAt ? `@${part}` : part))
             .join("<br>")
         : "";
       metaPer.innerHTML =
