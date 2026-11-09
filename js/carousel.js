@@ -99,9 +99,7 @@ export function createCarousel(root, { getLang } = {}) {
     state.active = logical;
 
     if (counter) {
-      counter.innerHTML = wrapTnum(
-        `${logical + 1}${SLASH}${state.originalCount || state.geometry.length}`
-      );
+      counter.textContent = `${logical + 1}${SLASH}${state.originalCount || state.geometry.length}`;
     }
 
     if (!force && projectId === state.activeProject) return;
