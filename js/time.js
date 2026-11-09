@@ -7,8 +7,10 @@ const WEATHER_URL =
 const WEATHER_TTL_MS = 30 * 60 * 1000;
 const WEATHER_KEY = "terlizzi_temp";
 const WEATHER_AT = "terlizzi_temp_time";
-const WEATHER_FETCH_MS = 10_000;
-const WEATHER_IDLE_MS = 1200;
+const WEATHER_FETCH_MS = 12_000;
+const WEATHER_IDLE_MS = 900;
+/** Safari iOS: cellular may come up late; keep a few spaced retries. */
+const WEATHER_RETRY_MS = Object.freeze([0, 1500, 4000, 9000]);
 const WEATHER_PLACEHOLDER = /^(?:—|–|-|−)?$/;
 
 const timeFmt = new Intl.DateTimeFormat("en-GB", {
@@ -122,17 +124,15 @@ const writeWeatherCache = (temp) => {
   }
 };
 
+/** Classic AbortController — avoid AbortSignal.timeout quirks on older iOS. */
 const abortAfter = (ms) => {
-  if (typeof AbortSignal.timeout === "function") {
-    return { signal: AbortSignal.timeout(ms), cancel: () => {} };
-  }
   const ctrl = new AbortController();
   const id = window.setTimeout(() => ctrl.abort(), ms);
   return { signal: ctrl.signal, cancel: () => clearTimeout(id) };
 };
 
 /** Open-Meteo Terlizzi temperature; updates every given element / id. */
-export async function fetchTerlizziWeather(targets) {
+async function fetchTerlizziWeather(targets) {
   const els = nodesFor(targets);
   if (!els.length) return false;
 
@@ -144,8 +144,10 @@ export async function fetchTerlizziWeather(targets) {
 
   const { signal, cancel } = abortAfter(WEATHER_FETCH_MS);
   try {
-    // No custom headers → simple CORS request (avoids preflight on mobile networks).
-    const res = await fetch(WEATHER_URL, { signal, cache: "no-store" });
+    // Keep this a *simple* CORS GET. Safari maps `cache: "no-store"` to
+    // Cache-Control/Pragma request headers → preflight; Open-Meteo does not
+    // allow those headers, so the fetch fails only on Safari (desktop Chrome OK).
+    const res = await fetch(WEATHER_URL, { signal });
     if (!res.ok) return false;
     const data = await res.json();
     const n = data?.current?.temperature_2m;
@@ -162,30 +164,47 @@ export async function fetchTerlizziWeather(targets) {
 }
 
 /**
- * Load weather after first paint; retry when the colophon becomes visible
- * (covers Safari idle-callback flakiness + late network on mobile).
+ * Load weather after first paint; retry when empty / visible / back online
+ * (Safari idle flakiness + late cellular).
  */
 export function bindTerlizziWeather(targets) {
   let inflight = null;
-  const run = () => {
-    if (inflight) return inflight;
-    inflight = fetchTerlizziWeather(targets).finally(() => {
-      inflight = null;
-    });
-    return inflight;
-  };
-
-  whenIdle(run, WEATHER_IDLE_MS);
+  let done = false;
 
   const probe = nodesFor(targets)[0];
   if (!probe) return;
 
   const stillEmpty = () => isWeatherPlaceholder(probe);
 
-  // Retry once after a short beat if the first attempt lost the race to boot.
-  window.setTimeout(() => {
+  const run = () => {
+    if (done || document.hidden) return inflight;
+    if (inflight) return inflight;
+    inflight = fetchTerlizziWeather(targets)
+      .then((ok) => {
+        if (ok) done = true;
+        return ok;
+      })
+      .finally(() => {
+        inflight = null;
+      });
+    return inflight;
+  };
+
+  whenIdle(run, WEATHER_IDLE_MS);
+  for (const ms of WEATHER_RETRY_MS) {
+    window.setTimeout(() => {
+      if (stillEmpty()) run();
+    }, ms);
+  }
+
+  const onResume = () => {
     if (stillEmpty()) run();
-  }, WEATHER_IDLE_MS + 800);
+  };
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) onResume();
+  });
+  window.addEventListener("pageshow", onResume);
+  window.addEventListener("online", onResume);
 
   if (!("IntersectionObserver" in window)) return;
 
@@ -193,10 +212,9 @@ export function bindTerlizziWeather(targets) {
     (entries) => {
       if (!entries.some((e) => e.isIntersecting)) return;
       if (stillEmpty()) run();
-      // Keep observing until we have a value — cellular can come up late.
       if (!stillEmpty()) io.disconnect();
     },
-    { root: null, rootMargin: "120px 0px", threshold: 0 }
+    { root: null, rootMargin: "160px 0px", threshold: 0 }
   );
   io.observe(probe);
 }

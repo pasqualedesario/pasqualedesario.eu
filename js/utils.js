@@ -3,13 +3,10 @@ export {
   $,
   readLangParam,
   writeLangUrl,
-  configureLangButton,
+  syncLangButtons,
   bindQueryFace,
-  scrollbarWidth,
   setScrollbarComp,
-  nodesFor,
   wrapTnum,
-  whenIdle,
   bindLangButtons
 } from "./utils-shared.js";
 
@@ -32,10 +29,9 @@ export const rafSchedule = (fn) => {
   };
 };
 
-/** Subscribe to a MediaQueryList change (Safari < 14 fallback). */
+/** Subscribe to a MediaQueryList change. */
 export const onMediaChange = (mq, fn) => {
-  if (typeof mq.addEventListener === "function") mq.addEventListener("change", fn);
-  else mq.addListener?.(fn);
+  mq.addEventListener("change", fn);
 };
 
 /** Paired home + archive colophon element ids. */

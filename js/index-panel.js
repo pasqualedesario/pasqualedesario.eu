@@ -17,7 +17,7 @@ import {
   rafSchedule,
   MQ,
   onMediaChange,
-  configureLangButton,
+  syncLangButtons,
   bindQueryFace
 } from "./utils.js";
 import {
@@ -89,9 +89,9 @@ const collectProjectMedia = () => {
 /** Year en-dashes bare; em dashes → thin + .dash (case 0). Keep last two words together. */
 const withDashSpans = (s) =>
   escapeHtml(String(s || "").replace(/\s+(\S+)\s*$/u, "\u00A0$1"))
-    .replace(/(\d)[\u2009\u200A\s]*[\u2013\-][\u2009\u200A\s]*(\d)/g, `$1\u2013$2`)
+    .replace(/(\d)[\u2009\s]*[\u2013\-][\u2009\s]*(\d)/g, `$1\u2013$2`)
     .replace(
-      /[\u2009\u200A\s]*\u2014[\u2009\u200A\s]*/g,
+      /[\u2009\s]*\u2014[\u2009\s]*/g,
       `\u2009<span class="dash">\u2014</span>\u2009`
     );
 
@@ -120,18 +120,11 @@ export function createIndexPanel({
   const siteGate = gateQuery?.closest(".site-gate") || $("site-gate");
   const cueRoots = [...document.querySelectorAll(".archive-cues")];
   const cueDesktop = [...document.querySelectorAll("[data-archive-cue]")];
-  const cueMobile = [...document.querySelectorAll("[data-archive-cue-mobile]")];
   const contactSection = document.querySelector(".stack-section--contact");
   const aboutRow = contactSection?.querySelector(".curtain-about-row");
   const colophonBar = contactSection?.querySelector(".footer-bar--colophon");
-  const emailBlock = contactSection?.querySelector(".info-block--contact");
-  const platformsBlock = contactSection?.querySelector(".info-block--platforms");
   const desktopAboutBand = contactSection?.querySelector(
     ".archive-cues--desktop.archive-cues--band-about"
-  );
-  const mobileEmailBand = contactSection?.querySelector(".archive-cues--band-email");
-  const mobileAboutBand = contactSection?.querySelector(
-    ".archive-cues--mobile.archive-cues--band-about"
   );
   if (!curtain || !results || !queryEl) return null;
 
@@ -409,14 +402,9 @@ export function createIndexPanel({
   const syncArchiveQueryDisplay = () => paint(queryEl, state.open, state.query);
 
   const syncCueCopy = (code = lang()) => {
-    const t = TRANSLATIONS[code];
-    const desktop = t?.archiveCueDesktop || "";
-    const mobile = t?.archiveCueMobile || "";
+    const desktop = TRANSLATIONS[code]?.archiveCueDesktop || "";
     for (const el of cueDesktop) {
       if (el.textContent !== desktop) el.textContent = desktop;
-    }
-    for (const el of cueMobile) {
-      if (el.textContent !== mobile) el.textContent = mobile;
     }
   };
 
@@ -440,22 +428,17 @@ export function createIndexPanel({
 
   /** Position cue overlays without touching about / colophon flow. */
   const layoutCueBands = () => {
-    if (!contactSection) return;
-    const sec = contactSection.getBoundingClientRect();
-    if (state.mobile) {
+    if (!contactSection || state.mobile) {
       clearBand(desktopAboutBand);
-      placeBand(mobileEmailBand, emailBlock, platformsBlock, sec);
-      placeBand(mobileAboutBand, aboutRow, colophonBar, sec);
       return;
     }
-    clearBand(mobileEmailBand);
-    clearBand(mobileAboutBand);
+    const sec = contactSection.getBoundingClientRect();
     placeBand(desktopAboutBand, aboutRow, colophonBar, sec);
   };
 
   const syncCueVisibility = () => {
-    // Hints only — hide while typing into the gate or when archive is open.
-    const show = state.cueReady && !state.open && !state.gate;
+    // Desktop hints only — hide while typing into the gate or when archive is open.
+    const show = !state.mobile && state.cueReady && !state.open && !state.gate;
     html.classList.toggle("is-archive-cue-visible", show);
     for (const root of cueRoots) {
       root.hidden = !show;
@@ -507,8 +490,7 @@ export function createIndexPanel({
 
     if (colophon.credit) colophon.credit.innerHTML = C.colophonCredit;
     if (colophon.typography) colophon.typography.innerHTML = C.colophonTypography;
-    configureLangButton(colophon.langPrimary, t.langPrimary);
-    configureLangButton(colophon.langSecondary, t.langSecondary);
+    syncLangButtons(colophon.langPrimary, colophon.langSecondary, code);
   };
 
   const buildResults = (items) => {

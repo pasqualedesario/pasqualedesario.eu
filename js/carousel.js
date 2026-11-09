@@ -1,4 +1,11 @@
-import { projectCopy, projectFooterPer, projectFooterCon, indexLabels, SLASH } from "./i18n.js";
+import {
+  projectCopy,
+  projectCarouselTitleHtml,
+  projectFooterPer,
+  projectFooterCon,
+  indexLabels,
+  SLASH
+} from "./i18n.js";
 import { $, pauseVideos, wrapTnum, rafSchedule, MQ, shuffleInPlace } from "./utils.js";
 
 /**
@@ -104,7 +111,7 @@ export function createCarousel(root, { getLang } = {}) {
     const copy = projectCopy(code, projectId);
     if (!copy) return;
     if (year) year.innerHTML = wrapTnum(copy.year || "");
-    if (title) title.innerHTML = copy.title || "";
+    if (title) title.innerHTML = projectCarouselTitleHtml(copy);
     const collab = indexLabels(code)?.collab || "Con";
     if (per) per.innerHTML = projectFooterPer(copy);
     if (con) con.innerHTML = projectFooterCon(copy, collab);

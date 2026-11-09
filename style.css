@@ -202,8 +202,7 @@ video {
   max-height: 50dvh;
   background: var(--color-white);
   overflow: hidden;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 50dvh;
+  /* No content-visibility: Safari was skipping Open-Meteo paint in this band. */
 }
 
 .stack-section--contact .footer-bar {
@@ -549,6 +548,9 @@ video {
   a:hover,
   a:hover em,
   a:hover i,
+  .gallery-col--title a:hover,
+  .gallery-col--title a:hover em,
+  .gallery-col--title a:hover i,
   .lang-btn:hover {
     color: var(--color-jasper);
   }
@@ -557,6 +559,9 @@ video {
 a:focus-visible,
 a:focus-visible em,
 a:focus-visible i,
+.gallery-col--title a:focus-visible,
+.gallery-col--title a:focus-visible em,
+.gallery-col--title a:focus-visible i,
 .lang-btn:focus-visible {
   color: var(--color-jasper);
   outline: none;
@@ -655,13 +660,11 @@ a:focus-visible i,
     min-height: 100dvh;
     padding: var(--gap);
     overflow-y: auto;
-    content-visibility: visible;
   }
 
   /*
    * Lift contact / platforms / about into the section flex so space-between
    * places about at the midpoint between platforms (GitHub) and colophon.
-   * Cue bands stay absolute and sit in the resulting gaps.
    */
   .stack-section--contact .section-content--curtain,
   .stack-section--contact .curtain-top-row {
@@ -746,13 +749,6 @@ a:focus-visible i,
 
   html.is-archive-cue-visible:not(.is-index-open) .archive-cues--desktop {
     display: none;
-  }
-
-  html.is-archive-cue-visible:not(.is-index-open) .archive-cues--mobile {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding-inline: var(--gap);
   }
 }
 

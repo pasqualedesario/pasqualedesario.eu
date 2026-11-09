@@ -17,12 +17,29 @@ export const writeLangUrl = (lang, { hash = null } = {}) => {
   history.replaceState(null, "", url);
 };
 
-/** Wire a language toggle button from `{ text, target }`. */
-export const configureLangButton = (btn, cfg) => {
+/** Fixed bilingual labels — always native endonyms so either reader finds theirs. */
+const LANG_BUTTONS = Object.freeze({
+  primary: Object.freeze({ text: "Italiano", target: "it" }),
+  secondary: Object.freeze({ text: "English", target: "en" })
+});
+
+/** Wire a language button from `{ text, target }`; mark pressed when active. */
+const configureLangButton = (btn, cfg, activeLang) => {
   if (!btn || !cfg) return;
   btn.textContent = cfg.text;
   btn.dataset.targetLang = cfg.target;
-  btn.setAttribute("aria-label", `Set language ${cfg.text}`);
+  const active = activeLang === cfg.target;
+  btn.setAttribute("aria-pressed", active ? "true" : "false");
+  btn.setAttribute(
+    "aria-label",
+    active ? cfg.text : `Set language ${cfg.text}`
+  );
+};
+
+/** Sync both colophon lang buttons to fixed Italiano / English labels. */
+export const syncLangButtons = (primary, secondary, activeLang) => {
+  configureLangButton(primary, LANG_BUTTONS.primary, activeLang);
+  configureLangButton(secondary, LANG_BUTTONS.secondary, activeLang);
 };
 
 const QUERY_FACES = Object.freeze([

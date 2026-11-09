@@ -1,14 +1,14 @@
 /** Bilingual copy — single source of truth for home + archive + carousel. */
 
-import { configureLangButton } from "./utils.js";
+import { syncLangButtons } from "./utils-shared.js";
 
 const THIN = "\u2009";
-const HAIR = "\u200A";
 const NBSP = "\u00A0";
-const PLUS = `${HAIR}<span class="plus">+</span>${HAIR}`;
+const PLUS = `${THIN}<span class="plus">+</span>${THIN}`;
 const EM = `${THIN}<span class="dash">\u2014</span>${THIN}`;
 const EN = "\u2013";
-export const SLASH = `${HAIR}/${HAIR}`;
+const ENDASH = `${THIN}<span class="dash">${EN}</span>${THIN}`;
+export const SLASH = `${THIN}/${THIN}`;
 
 /** Keep school-name tails together (text-wrap:pretty is incomplete in links). */
 const SCHOOL = Object.freeze({
@@ -50,11 +50,6 @@ const BRUNO_SUP = `${ext(HREF.bruno, "bruno")} (Andrea Codolo &amp; Giacomo Cova
 /** Apex note after a title (research curtain + archive list). */
 const degreeNote = (label) =>
   `<sup class="research-degree">${label}</sup>`;
-
-const NOTE = Object.freeze({
-  workshop: "Workshop",
-  masterclass: "Masterclass"
-});
 
 const titled = (name, note) => `${em(name)}${note ? degreeNote(note) : ""}`;
 
@@ -166,12 +161,12 @@ const tagSearchText = (tags) =>
     })
     .join(" ");
 
-const FONTS = `${ext(HREF.dinamo, "ABC Monument Grotesk")} <span class="plus">+</span> ${ext(HREF.lineto, "LL Fiat77")} <span class="plus">+</span> ${ext(HREF.lineto, "Agip77LL")}`;
+const FONTS = `${ext(HREF.dinamo, "ABC Monument Grotesk")}${PLUS}${ext(HREF.lineto, "LL Fiat77")}${PLUS}${ext(HREF.lineto, "Agip77LL")}`;
 
 const SHARED = Object.freeze({
   esperienza: `${ext(HREF.bruno, "bruno")}<br>${ext(HREF.sos, "La Scuola Open Source")}`,
   credit: colophonLines(
-    `Design <span class="plus">+</span> Development:`,
+    `Design${PLUS}Development:`,
     "Pasquale de Sario (2026)"
   ),
   typographyIt: colophonLines("Composto in:", FONTS),
@@ -284,10 +279,7 @@ function projects(collab) {
     },
     ar: {
       year: "2025",
-      title: titled(
-        it ? "La dimora del Minotauro" : "The Minotaur’s abode",
-        NOTE.masterclass
-      ),
+      title: em(it ? "La dimora del Minotauro" : "The Minotaur’s abode"),
       per: "Apparati Radicali",
       con: "",
       sup: `Noemi Biasetton, ${BRUNO_SUP}`,
@@ -296,7 +288,7 @@ function projects(collab) {
     },
     typearound: {
       year: "2024",
-      title: titled("Type Around", NOTE.workshop),
+      title: em("Type Around"),
       per: "Voga",
       con: "",
       sup: "Collletttivo",
@@ -312,7 +304,7 @@ function projects(collab) {
     },
     xyz2022: {
       year: "2022",
-      title: titled("XYZ 2022 «Tradire la tradizione»", NOTE.workshop),
+      title: em("XYZ 2022 «Tradire la tradizione»"),
       per: "SOS",
       con: "Gruppo X",
       tags: ["research", "coDesign", "graphicDesign"],
@@ -406,8 +398,8 @@ function projects(collab) {
       year: "2023",
       title: em("Musa"),
       per: it
-        ? `Musa${HAIR}<span class="dash">${EN}</span>${HAIR}Storie d’aperitivo<br>Illustrazioni: Émile<span class="dash">-</span>Allain Séguy<br>Fotografie: Vito Lauciello`
-        : `Musa${HAIR}<span class="dash">${EN}</span>${HAIR}Storie d’aperitivo<br>Illustrations: Émile<span class="dash">-</span>Allain Séguy<br>Photographs: Vito Lauciello`,
+        ? `Musa${ENDASH}Storie d’aperitivo<br>Illustrazioni: Émile<span class="dash">-</span>Allain Séguy<br>Fotografie: Vito Lauciello`
+        : `Musa${ENDASH}Storie d’aperitivo<br>Illustrations: Émile<span class="dash">-</span>Allain Séguy<br>Photographs: Vito Lauciello`,
       con: "",
       tags: ["artDirection", "graphicDesign"]
     }
@@ -430,8 +422,6 @@ export const ABOUT_BOOT = Object.freeze({
 
 export const TRANSLATIONS = Object.freeze({
   it: {
-    langPrimary: { text: "Italiano", target: "it" },
-    langSecondary: { text: "Inglese", target: "en" },
     skipLink: "Vai al contenuto",
     metaDescription:
       "Pasquale de Sario, designer e art director di base in Puglia. Tipografia, editoria, information e web design.",
@@ -440,8 +430,7 @@ export const TRANSLATIONS = Object.freeze({
     indexLabels: {
       title: "Archivio",
       collab: "Con",
-      supervision: "Supervisione",
-      link: "Link"
+      supervision: "Supervisione"
     },
     aboutShort: ABOUT_BOOT.it.short,
     aboutFull: ABOUT_BOOT.it.full,
@@ -449,8 +438,6 @@ export const TRANSLATIONS = Object.freeze({
     aboutCollapse: "Comprimi",
     archiveCueDesktop:
       "Scrivi archivio e premi ↙ invio per visualizzare l’archivio completo",
-    archiveCueMobile:
-      "Esplora l’archivio completo sul sito desktop",
     aria: Object.freeze({
       carousel: "Galleria progetti",
       projectDetails: "Dettagli progetto",
@@ -476,8 +463,6 @@ export const TRANSLATIONS = Object.freeze({
     }
   },
   en: {
-    langPrimary: { text: "English", target: "en" },
-    langSecondary: { text: "Italian", target: "it" },
     skipLink: "Skip to content",
     metaDescription:
       "Pasquale de Sario, designer and art director based in Puglia, Italy. Typography, publishing, information and web design.",
@@ -486,8 +471,7 @@ export const TRANSLATIONS = Object.freeze({
     indexLabels: {
       title: "Archive",
       collab: "With",
-      supervision: "Tutoring",
-      link: "Link"
+      supervision: "Tutoring"
     },
     aboutShort: ABOUT_BOOT.en.short,
     aboutFull: ABOUT_BOOT.en.full,
@@ -495,8 +479,6 @@ export const TRANSLATIONS = Object.freeze({
     aboutCollapse: "Collapse",
     archiveCueDesktop:
       "Write archive and press ↙ enter to view the full archive",
-    archiveCueMobile:
-      "Explore the complete archive on desktop",
     aria: Object.freeze({
       carousel: "Project gallery",
       projectDetails: "Project details",
@@ -585,8 +567,7 @@ export function applyLanguage(dom, lang, onApplied) {
   syncDocumentMeta(t);
   syncAriaLabels(t.aria);
 
-  configureLangButton(dom.langBtnPrimary, t.langPrimary);
-  configureLangButton(dom.langBtnSecondary, t.langSecondary);
+  syncLangButtons(dom.langBtnPrimary, dom.langBtnSecondary, lang);
   if (dom.skipLink) dom.skipLink.textContent = t.skipLink;
 
   const { labels: L, values: V } = dom;
@@ -604,6 +585,13 @@ export function applyLanguage(dom, lang, onApplied) {
 
 export function projectCopy(lang, projectId) {
   return TRANSLATIONS[lang]?.projects?.[projectId] ?? null;
+}
+
+/** Home carousel title: wrap with first archive link when present. */
+export function projectCarouselTitleHtml(project) {
+  const title = project?.title || "";
+  const href = project?.links?.[0];
+  return href ? ext(href, title) : title;
 }
 
 /**
@@ -638,7 +626,7 @@ export const stripHtml = (html) =>
   String(html || "")
     .replace(/<br\s*\/?>/gi, " ")
     .replace(/<[^>]+>/g, "")
-    .replace(/[\u2009\u200A\u2002\u00A0]/g, " ")
+    .replace(/[\u2009\u2002\u00A0]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
